@@ -2,44 +2,57 @@ package store
 
 import (
 	"database/sql"
+	"embed"
+	"errors"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const schema = `
-CREATE TABLE IF NOT EXISTS users (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    username   TEXT UNIQUE NOT NULL,
-    password   TEXT NOT NULL,
-    role       TEXT NOT NULL DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+//go:embed migrations/*.sql
+var migrationFiles embed.FS
 
-CREATE TABLE IF NOT EXISTS user_settings (
-    user_id              INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    language             TEXT DEFAULT 'en',
-    theme                TEXT DEFAULT 'dark',
-    quadlet_dir          TEXT DEFAULT '',
-    podman_socket        TEXT DEFAULT '',
-    items_per_page       INTEGER DEFAULT 20,
-    auto_refresh_seconds INTEGER DEFAULT 30,
-    default_restart_policy TEXT DEFAULT 'always',
-    notify_on_failure    BOOLEAN DEFAULT 1
-);
+type noLog struct{}
 
-CREATE TABLE IF NOT EXISTS config (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-`
+func (l *noLog) Printf(format string, v ...interface{}) {}
+func (l *noLog) Verbose() bool                          { return false }
 
 func NewDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dsn+"?_journal_mode=WAL&_foreign_keys=on")
 	if err != nil {
 		return nil, err
 	}
-	if _, err := db.Exec(schema); err != nil {
+
+	if err := runMigrations(db); err != nil {
 		db.Close()
 		return nil, err
 	}
+
 	return db, nil
+}
+
+func runMigrations(db *sql.DB) error {
+	src, err := iofs.New(migrationFiles, "migrations")
+	if err != nil {
+		return err
+	}
+
+	dbDriver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithInstance("iofs", src, "sqlite3", dbDriver)
+	if err != nil {
+		return err
+	}
+	m.Log = &noLog{}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+
+	return nil
 }
