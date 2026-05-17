@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/choken/quadlet-manager/internal/model"
 	"github.com/godbus/dbus/v5"
 )
 
 const (
-	systemdDest = "org.freedesktop.systemd1"
-	systemdPath = "/org/freedesktop/systemd1"
+	systemdDest        = "org.freedesktop.systemd1"
+	systemdPath        = "/org/freedesktop/systemd1"
+	defaultDBusTimeout = 5 * time.Second
 )
 
 // DBusSystemdProvider implements SystemdProvider via the system/session D-Bus.
@@ -51,7 +53,17 @@ func (p *DBusSystemdProvider) IsRootless() bool {
 	return p.rootless
 }
 
+// withTimeout applies a default 5s deadline if the context has no deadline.
+func (p *DBusSystemdProvider) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if _, ok := ctx.Deadline(); ok {
+		return ctx, func() {}
+	}
+	return context.WithTimeout(ctx, defaultDBusTimeout)
+}
+
 func (p *DBusSystemdProvider) DaemonReload(ctx context.Context) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	if p.conn == nil {
 		return fmt.Errorf("not connected")
 	}
@@ -61,14 +73,20 @@ func (p *DBusSystemdProvider) DaemonReload(ctx context.Context) error {
 }
 
 func (p *DBusSystemdProvider) StartUnit(ctx context.Context, name string) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	return p.unitAction(ctx, "StartUnit", name)
 }
 
 func (p *DBusSystemdProvider) StopUnit(ctx context.Context, name string) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	return p.unitAction(ctx, "StopUnit", name)
 }
 
 func (p *DBusSystemdProvider) RestartUnit(ctx context.Context, name string) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	return p.unitAction(ctx, "RestartUnit", name)
 }
 
@@ -86,10 +104,14 @@ func (p *DBusSystemdProvider) unitAction(ctx context.Context, method, name strin
 }
 
 func (p *DBusSystemdProvider) EnableUnit(ctx context.Context, name string) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	return p.enableDisable(ctx, "EnableUnitFiles", name)
 }
 
 func (p *DBusSystemdProvider) DisableUnit(ctx context.Context, name string) error {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	return p.enableDisable(ctx, "DisableUnitFiles", name)
 }
 
@@ -104,6 +126,8 @@ func (p *DBusSystemdProvider) enableDisable(ctx context.Context, method, name st
 }
 
 func (p *DBusSystemdProvider) ListUnits(ctx context.Context) ([]model.UnitStatus, error) {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	if p.conn == nil {
 		return nil, fmt.Errorf("not connected")
 	}
@@ -152,6 +176,8 @@ func (p *DBusSystemdProvider) ListUnits(ctx context.Context) ([]model.UnitStatus
 }
 
 func (p *DBusSystemdProvider) GetUnitStatus(ctx context.Context, name string) (*model.UnitStatus, error) {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
 	if p.conn == nil {
 		return nil, fmt.Errorf("not connected")
 	}
