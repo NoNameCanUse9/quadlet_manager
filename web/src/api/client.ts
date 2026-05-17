@@ -56,12 +56,68 @@ export const api = {
   listContainers: () => request<ContainerInfo[]>('/containers'),
   getContainerLogs: (id: string, tail = 100) =>
     request<ContainerLogs>(`/containers/${id}/logs?tail=${tail}`),
-  listImages: () => request<ImageInfo[]>('/containers/images'),
-  listVolumes: () => request<VolumeInfo[]>('/containers/volumes'),
-  listNetworks: () => request<NetworkInfo[]>('/containers/networks'),
+  startContainer: (id: string) => request(`/containers/${id}/start`, { method: 'POST' }),
+  stopContainer: (id: string) => request(`/containers/${id}/stop`, { method: 'POST' }),
+  restartContainer: (id: string) => request(`/containers/${id}/restart`, { method: 'POST' }),
+  pauseContainer: (id: string) => request(`/containers/${id}/pause`, { method: 'POST' }),
+  unpauseContainer: (id: string) => request(`/containers/${id}/unpause`, { method: 'POST' }),
+  removeContainer: (id: string, force = false) =>
+    request(`/containers/${id}?force=${force}`, { method: 'DELETE' }),
+  inspectContainer: (id: string) => request<ContainerInspect>(`/containers/${id}/inspect`),
+
+  // Exec
+  execCreate: (id: string, cmd: string[] = ['/bin/sh']) =>
+    request<{ exec_id: string }>(`/containers/${id}/exec`, { method: 'POST', body: JSON.stringify({ cmd }) }),
+
+  // Images
+  listImages: () => request<ImageInfo[]>('/images'),
+  pullImage: (name: string) =>
+    request<{ task_id: string }>('/images/pull', { method: 'POST', body: JSON.stringify({ name }) }),
+  removeImage: (id: string, force = false) =>
+    request(`/images/${id}?force=${force}`, { method: 'DELETE' }),
+  inspectImage: (id: string) => request<ImageInspect>(`/images/${id}/inspect`),
+
+  // Volumes
+  listVolumes: () => request<VolumeInfo[]>('/volumes'),
+  createVolume: (name: string, labels?: Record<string, string>) =>
+    request('/volumes', { method: 'POST', body: JSON.stringify({ name, labels }) }),
+  removeVolume: (name: string, force = false) =>
+    request(`/volumes/${name}?force=${force}`, { method: 'DELETE' }),
+  inspectVolume: (name: string) => request<VolumeInspect>(`/volumes/${name}/inspect`),
+
+  // Networks
+  listNetworks: () => request<NetworkInfo[]>('/networks'),
+  createNetwork: (name: string, driver?: string, subnet?: string) =>
+    request('/networks', { method: 'POST', body: JSON.stringify({ name, driver, subnet }) }),
+  removeNetwork: (name: string) =>
+    request(`/networks/${name}`, { method: 'DELETE' }),
+  inspectNetwork: (name: string) => request<NetworkInspect>(`/networks/${name}/inspect`),
+
+  // Backup
+  exportBackup: () => {
+    const token = useAuth.getState().token
+    return fetch(`${BASE}/backup/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).then(res => res.blob())
+  },
+  importBackup: (file: File) => {
+    const token = useAuth.getState().token
+    const formData = new FormData()
+    formData.append('backup', file)
+    return fetch(`${BASE}/backup/import`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }).then(res => res.json())
+  },
 
   // Stats
   getStats: () => request<SystemStats>('/stats'),
+
+  // Settings
+  getSettings: () => request<UserSettings>('/settings'),
+  updateSettings: (fields: Record<string, unknown>) =>
+    request('/settings', { method: 'PUT', body: JSON.stringify(fields) }),
 }
 
 export interface SystemInfo {
@@ -137,6 +193,57 @@ export interface NetworkInfo {
   id: string
 }
 
+export interface ContainerInspect {
+  id: string
+  name: string
+  state: {
+    status: string
+    running: boolean
+    paused: boolean
+  }
+  config: {
+    image: string
+    cmd: string[]
+    env: string[]
+  }
+  labels: Record<string, string>
+}
+
+export interface ImageInspect {
+  id: string
+  repoTags: string[]
+  size: number
+  created: string
+}
+
+export interface VolumeInspect {
+  name: string
+  mountpoint: string
+  labels: Record<string, string>
+  driver: string
+  createdAt: string
+}
+
+export interface NetworkInspect {
+  name: string
+  id: string
+  driver: string
+  subnet: string
+  gateway: string
+}
+
 export interface SystemStats {
   containers: ContainerStats[]
+}
+
+export interface UserSettings {
+  user_id: number
+  language: string
+  theme: string
+  quadlet_dir: string
+  podman_socket: string
+  items_per_page: number
+  auto_refresh_seconds: number
+  default_restart_policy: string
+  notify_on_failure: boolean
 }
