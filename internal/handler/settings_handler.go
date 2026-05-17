@@ -30,6 +30,11 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	userID := c.GetInt64("user_id")
+	// Ensure settings row exists
+	if _, err := h.auth.Settings().GetByUserID(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	var req map[string]interface{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
