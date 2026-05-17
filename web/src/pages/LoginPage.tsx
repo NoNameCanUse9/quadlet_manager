@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/store/useAuth'
+import { Languages } from 'lucide-react'
+import i18n from '@/i18n'
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { login, loading, error } = useAuth()
   const [username, setUsername] = useState('')
@@ -16,12 +20,27 @@ export function LoginPage() {
     } catch {}
   }
 
+  const toggleLang = () => {
+    const next = i18n.language === 'en' ? 'zh' : 'en'
+    i18n.changeLanguage(next)
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <form onSubmit={handleSubmit} className="w-80 space-y-4">
-        <h1 className="text-sm font-bold tracking-widest text-accent uppercase text-center">
-          Quadlet Manager
-        </h1>
+        <div className="text-center space-y-2">
+          <h1 className="text-sm font-bold tracking-widest text-accent uppercase">
+            Quadlet Manager
+          </h1>
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="inline-flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary transition-colors"
+          >
+            <Languages size={12} />
+            {i18n.language === 'en' ? '中文' : 'English'}
+          </button>
+        </div>
         {error && (
           <div className="text-xs text-danger bg-red-500/10 border border-red-500/20 rounded px-3 py-2">
             {error}
@@ -31,7 +50,7 @@ export function LoginPage() {
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
+          placeholder={t('settings.language') === '语言' ? '用户名' : 'Username'}
           className="w-full bg-surface border border-border rounded px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           autoFocus
         />
@@ -39,7 +58,7 @@ export function LoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder={t('settings.language') === '语言' ? '密码' : 'Password'}
           className="w-full bg-surface border border-border rounded px-3 py-2 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
         />
         <button
@@ -47,7 +66,7 @@ export function LoginPage() {
           disabled={loading}
           className="w-full bg-accent text-background py-2 rounded text-xs font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
         >
-          {loading ? '...' : 'Login'}
+          {loading ? '...' : (i18n.language === 'zh' ? '登录' : 'Login')}
         </button>
       </form>
     </div>
