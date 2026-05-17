@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '@/store/useApp'
 import { api } from '@/api/client'
+import { toast } from 'sonner'
 import { QuadletEditor } from '@/components/editor/QuadletEditor'
 import { ViewToggle } from '@/components/editor/ViewToggle'
 import {
@@ -77,8 +78,9 @@ export function FilesPage() {
     setSaving(true)
     try {
       await api.updateFile(selectedFile, content)
+      toast.success('File saved')
     } catch (e) {
-      alert((e as Error).message)
+      toast.error((e as Error).message)
     }
     setSaving(false)
   }
@@ -88,8 +90,9 @@ export function FilesPage() {
     setSaving(true)
     try {
       await api.applyFile(selectedFile, content)
+      toast.success('File applied')
     } catch (e) {
-      alert((e as Error).message)
+      toast.error((e as Error).message)
     }
     setSaving(false)
   }
@@ -101,8 +104,9 @@ export function FilesPage() {
       await api.deleteFile(selectedFile)
       selectFile(null)
       fetchFiles()
+      toast.success('File deleted')
     } catch (e) {
-      alert((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
@@ -123,8 +127,9 @@ export function FilesPage() {
       setNewFilename('')
       await fetchFiles()
       selectFile(newFilename.trim())
+      toast.success('File created')
     } catch (e) {
-      alert((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 

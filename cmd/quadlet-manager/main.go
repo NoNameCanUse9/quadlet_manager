@@ -120,6 +120,19 @@ func main() {
 		return containerSvc.GetAllStats(ctx)
 	})
 
+	// Start alert broadcaster (every 5 seconds) — detects failed units
+	hub.StartAlertBroadcaster(context.Background(), 5*time.Second, func(ctx context.Context) ([]ws.UnitStatus, error) {
+		units, err := unitSvc.ListUnits(ctx, 0)
+		if err != nil {
+			return nil, err
+		}
+		result := make([]ws.UnitStatus, len(units))
+		for i, u := range units {
+			result[i] = ws.UnitStatus{Name: u.Name, ActiveState: u.ActiveState}
+		}
+		return result, nil
+	})
+
 	// Initialize handlers
 	systemH := handler.NewSystemHandler(cfg, unitSvc)
 	unitH := handler.NewUnitHandler(unitSvc, hub)

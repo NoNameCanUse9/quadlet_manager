@@ -6,6 +6,7 @@ import { useApp } from '@/store/useApp'
 import { useUnits } from '@/store/useUnits'
 import { useContainers } from '@/store/useContainers'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { toast } from 'sonner'
 
 export default function App() {
   const { token, checkInit, fetchMe } = useAuth()
@@ -32,6 +33,10 @@ export default function App() {
     }
     if (msg.type === 'stats_update') {
       fetchContainers()
+    }
+    if (msg.type === 'unit_failed') {
+      const data = msg.data as { name?: string }
+      toast.error(`Unit failed: ${data?.name || 'unknown'}`)
     }
   })
 

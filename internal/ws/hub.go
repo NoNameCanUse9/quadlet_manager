@@ -151,3 +151,48 @@ func (h *Hub) StartStatsBroadcaster(ctx context.Context, interval time.Duration,
 		}
 	}()
 }
+
+// UnitStatus represents a unit's current state for alert monitoring.
+type UnitStatus struct {
+	Name        string `json:"name"`
+	ActiveState string `json:"activeState"`
+}
+
+// UnitListSource is a function that returns current unit statuses.
+type UnitListSource func(ctx context.Context) ([]UnitStatus, error)
+
+// StartAlertBroadcaster polls unit statuses and broadcasts unit_failed events.
+func (h *Hub) StartAlertBroadcaster(ctx context.Context, interval time.Duration, source UnitListSource) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		previousFailed := make(map[string]bool)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if h.ClientCount() == 0 {
+					continue
+				}
+				units, err := source(ctx)
+				if err != nil {
+					continue
+				}
+				currentFailed := make(map[string]bool)
+				for _, u := range units {
+					if u.ActiveState == "failed" {
+						currentFailed[u.Name] = true
+						if !previousFailed[u.Name] {
+							h.Broadcast(Message{
+								Type: "unit_failed",
+								Data: map[string]string{"name": u.Name},
+							})
+						}
+					}
+				}
+				previousFailed = currentFailed
+			}
+		}
+	}()
+}

@@ -1,23 +1,36 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthGuard } from '@/components/AuthGuard'
-import { LoginPage } from '@/pages/LoginPage'
-import { InitPage } from '@/pages/InitPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { UnitsPage } from '@/pages/UnitsPage'
-import { ContainersPage } from '@/pages/ContainersPage'
-import { ImagesPage } from '@/pages/ImagesPage'
-import { VolumesPage } from '@/pages/VolumesPage'
-import { NetworksPage } from '@/pages/NetworksPage'
-import { FilesPage } from '@/pages/FilesPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { AdminUsersPage } from '@/pages/AdminUsersPage'
-import { TerminalPage } from '@/pages/TerminalPage'
-import { BackupPage } from '@/pages/BackupPage'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
+const InitPage = lazy(() => import('@/pages/InitPage').then(m => ({ default: m.InitPage })))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const UnitsPage = lazy(() => import('@/pages/UnitsPage').then(m => ({ default: m.UnitsPage })))
+const ContainersPage = lazy(() => import('@/pages/ContainersPage').then(m => ({ default: m.ContainersPage })))
+const ImagesPage = lazy(() => import('@/pages/ImagesPage').then(m => ({ default: m.ImagesPage })))
+const VolumesPage = lazy(() => import('@/pages/VolumesPage').then(m => ({ default: m.VolumesPage })))
+const NetworksPage = lazy(() => import('@/pages/NetworksPage').then(m => ({ default: m.NetworksPage })))
+const FilesPage = lazy(() => import('@/pages/FilesPage').then(m => ({ default: m.FilesPage })))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const AdminUsersPage = lazy(() => import('@/pages/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })))
+const TerminalPage = lazy(() => import('@/pages/TerminalPage').then(m => ({ default: m.TerminalPage })))
+const BackupPage = lazy(() => import('@/pages/BackupPage').then(m => ({ default: m.BackupPage })))
+
+function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<div className="p-4 text-xs text-text-muted">Loading...</div>}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
 
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
-  { path: '/init', element: <InitPage /> },
+  { path: '/login', element: <SuspenseWrapper><LoginPage /></SuspenseWrapper> },
+  { path: '/init', element: <SuspenseWrapper><InitPage /></SuspenseWrapper> },
   {
     path: '/',
     element: (
@@ -26,17 +39,17 @@ export const router = createBrowserRouter([
       </AuthGuard>
     ),
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'units', element: <UnitsPage /> },
-      { path: 'containers', element: <ContainersPage /> },
-      { path: 'images', element: <ImagesPage /> },
-      { path: 'volumes', element: <VolumesPage /> },
-      { path: 'networks', element: <NetworksPage /> },
-      { path: 'files', element: <FilesPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'admin/users', element: <AdminUsersPage /> },
-      { path: 'containers/:id/exec/:exec_id', element: <TerminalPage /> },
-      { path: 'backup', element: <BackupPage /> },
+      { index: true, element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
+      { path: 'units', element: <SuspenseWrapper><UnitsPage /></SuspenseWrapper> },
+      { path: 'containers', element: <SuspenseWrapper><ContainersPage /></SuspenseWrapper> },
+      { path: 'images', element: <SuspenseWrapper><ImagesPage /></SuspenseWrapper> },
+      { path: 'volumes', element: <SuspenseWrapper><VolumesPage /></SuspenseWrapper> },
+      { path: 'networks', element: <SuspenseWrapper><NetworksPage /></SuspenseWrapper> },
+      { path: 'files', element: <SuspenseWrapper><FilesPage /></SuspenseWrapper> },
+      { path: 'settings', element: <SuspenseWrapper><SettingsPage /></SuspenseWrapper> },
+      { path: 'admin/users', element: <SuspenseWrapper><AdminUsersPage /></SuspenseWrapper> },
+      { path: 'containers/:id/exec/:exec_id', element: <SuspenseWrapper><TerminalPage /></SuspenseWrapper> },
+      { path: 'backup', element: <SuspenseWrapper><BackupPage /></SuspenseWrapper> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
