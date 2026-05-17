@@ -1,0 +1,72 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "containers": "Containers",
+    "images": "Images",
+    "volumes": "Volumes",
+    "networks": "Networks",
+    "settings": "Settings",
+    "units": "Units"
+  },
+  "header": {
+    "serviceControl": "SERVICE CONTROL",
+    "unitStatus": "Unit Status",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "reload": "Reload",
+    "daemonReload": "Daemon Reload",
+    "enableOnBoot": "Enable on Boot"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "failed": "Failed",
+    "activating": "Activating",
+    "deactivating": "Deactivating"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalUnits": "Total Units",
+    "running": "Running",
+    "stopped": "Stopped",
+    "failed": "Failed",
+    "containerStats": "Container Stats",
+    "noContainers": "No running containers"
+  },
+  "units": {
+    "title": "Quadlet Units",
+    "name": "Name",
+    "status": "Status",
+    "source": "Source",
+    "actions": "Actions",
+    "noUnits": "No Quadlet units found"
+  },
+  "files": {
+    "title": "Quadlet Files",
+    "create": "Create New",
+    "filename": "Filename",
+    "content": "Content",
+    "save": "Save",
+    "apply": "Apply",
+    "delete": "Delete",
+    "validate": "Validate",
+    "wizard": "Wizard",
+    "editor": "Editor"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "refresh": "Refresh"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "rootless": "Rootless Mode",
+    "quadletDir": "Quadlet Directory",
+    "podmanSocket": "Podman Socket"
+  }
+}

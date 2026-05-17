@@ -1,0 +1,72 @@
+{
+  "sidebar": {
+    "dashboard": "仪表盘",
+    "containers": "容器",
+    "images": "镜像",
+    "volumes": "存储卷",
+    "networks": "网络",
+    "settings": "设置",
+    "units": "单元"
+  },
+  "header": {
+    "serviceControl": "服务控制",
+    "unitStatus": "单元状态",
+    "start": "启动",
+    "stop": "停止",
+    "restart": "重启",
+    "reload": "重载",
+    "daemonReload": "守护进程重载",
+    "enableOnBoot": "开机自启"
+  },
+  "status": {
+    "active": "运行中",
+    "inactive": "已停止",
+    "failed": "失败",
+    "activating": "启动中",
+    "deactivating": "停止中"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "totalUnits": "总单元数",
+    "running": "运行中",
+    "stopped": "已停止",
+    "failed": "失败",
+    "containerStats": "容器统计",
+    "noContainers": "没有运行中的容器"
+  },
+  "units": {
+    "title": "Quadlet 单元",
+    "name": "名称",
+    "status": "状态",
+    "source": "来源",
+    "actions": "操作",
+    "noUnits": "未找到 Quadlet 单元"
+  },
+  "files": {
+    "title": "Quadlet 文件",
+    "create": "新建",
+    "filename": "文件名",
+    "content": "内容",
+    "save": "保存",
+    "apply": "应用",
+    "delete": "删除",
+    "validate": "验证",
+    "wizard": "向导",
+    "editor": "编辑器"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "confirm": "确认",
+    "cancel": "取消",
+    "refresh": "刷新"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "rootless": "Rootless 模式",
+    "quadletDir": "Quadlet 目录",
+    "podmanSocket": "Podman Socket"
+  }
+}
