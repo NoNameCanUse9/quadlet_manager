@@ -6,21 +6,30 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/choken/quadlet-manager/internal/auth"
 	"github.com/choken/quadlet-manager/internal/provider"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
 var execUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		return origin == "" || origin == "http://localhost:9090" || origin == "http://localhost:8080"
+	},
 }
 
 type ExecHandler struct {
-	podman provider.PodmanProvider
+	podman    provider.PodmanProvider
+	jwtSecret []byte
 }
 
 func NewExecHandler(podman provider.PodmanProvider) *ExecHandler {
 	return &ExecHandler{podman: podman}
+}
+
+func (h *ExecHandler) SetJWTSecret(secret []byte) {
+	h.jwtSecret = secret
 }
 
 // ExecCreate creates a new exec session and returns the exec_id.
@@ -44,6 +53,19 @@ func (h *ExecHandler) ExecCreate(c *gin.Context) {
 // ExecWebSocket upgrades to WebSocket and bridges to the Podman exec session.
 func (h *ExecHandler) ExecWebSocket(c *gin.Context) {
 	execID := c.Param("exec_id")
+
+	// Validate JWT from query param
+	if len(h.jwtSecret) > 0 {
+		token := c.Query("token")
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			return
+		}
+		if _, err := auth.ValidateToken(h.jwtSecret, token); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+	}
 
 	wsConn, err := execUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

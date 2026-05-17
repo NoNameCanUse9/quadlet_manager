@@ -104,15 +104,15 @@ func filenameToUnitName(filename string) string {
 	case "container":
 		return base + ".service"
 	case "volume":
-		return base + ".volume"
+		return base + "-volume.service"
 	case "network":
-		return base + ".network"
+		return base + "-network.service"
 	case "pod":
-		return base + ".pod"
+		return base + "-pod.service"
 	case "kube":
-		return base + ".service"
+		return base + "-kube.service"
 	case "image":
-		return base + ".image"
+		return base + "-image.service"
 	default:
 		return ""
 	}

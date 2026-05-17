@@ -22,7 +22,9 @@ func (fs *QuadletFSImpl) ScanDir(_ context.Context) ([]model.QuadletFile, error)
 	entries, err := os.ReadDir(fs.baseDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			os.MkdirAll(fs.baseDir, 0755)
+			if mkErr := os.MkdirAll(fs.baseDir, 0755); mkErr != nil {
+				return nil, fmt.Errorf("create dir %s: %w", fs.baseDir, mkErr)
+			}
 			return nil, nil
 		}
 		return nil, fmt.Errorf("read dir %s: %w", fs.baseDir, err)
@@ -66,7 +68,9 @@ func (fs *QuadletFSImpl) WriteFile(_ context.Context, filename string, content s
 	if err := validateFilename(filename); err != nil {
 		return err
 	}
-	os.MkdirAll(fs.baseDir, 0755)
+	if err := os.MkdirAll(fs.baseDir, 0755); err != nil {
+		return fmt.Errorf("create dir %s: %w", fs.baseDir, err)
+	}
 	path := filepath.Join(fs.baseDir, filename)
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		return fmt.Errorf("write file %s: %w", filename, err)

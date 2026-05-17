@@ -84,7 +84,9 @@ func main() {
 			if err != nil {
 				log.Fatalf("generate jwt secret: %v", err)
 			}
-			db.Exec("INSERT OR REPLACE INTO config (key, value) VALUES ('jwt_secret', ?)", string(secret))
+			if _, err := db.Exec("INSERT OR REPLACE INTO config (key, value) VALUES ('jwt_secret', ?)", string(secret)); err != nil {
+				log.Fatalf("persist jwt secret: %v", err)
+			}
 			log.Printf("JWT secret generated and stored")
 		} else {
 			secret = []byte(stored)
@@ -113,6 +115,7 @@ func main() {
 
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
+	hub.SetJWTSecret(secret)
 	go hub.Run()
 
 	// Start stats broadcaster (every 5 seconds)
@@ -142,6 +145,7 @@ func main() {
 	volumeH := handler.NewVolumeHandler(volumeSvc)
 	networkH := handler.NewNetworkHandler(networkSvc)
 	execH := handler.NewExecHandler(podmanProvider)
+	execH.SetJWTSecret(secret)
 	backupH := handler.NewBackupHandler(backupSvc)
 	statsH := handler.NewStatsHandler(containerSvc, hub)
 	authH := handler.NewAuthHandler(authSvc)
@@ -238,9 +242,11 @@ func main() {
 
 		// Stats
 		protected.GET("/stats", statsH.GetStats)
+
+		// WebSocket (JWT required via query param or header)
+		protected.GET("/ws", statsH.HandleWebSocket)
 	}
 
-	r.GET("/ws", statsH.HandleWebSocket)
 	r.GET("/api/v1/containers/:id/exec/:exec_id/ws", execH.ExecWebSocket)
 
 	// Serve embedded frontend (SPA fallback)

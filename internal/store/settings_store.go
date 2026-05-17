@@ -43,11 +43,33 @@ func (s *SettingsStore) Update(userID int64, fields map[string]interface{}) erro
 		"items_per_page": true, "auto_refresh_seconds": true,
 		"default_restart_policy": true, "notify_on_failure": true,
 	}
+	// Type validation per field
+	stringFields := map[string]bool{"language": true, "theme": true, "quadlet_dir": true, "podman_socket": true, "default_restart_policy": true}
+	intFields := map[string]bool{"items_per_page": true, "auto_refresh_seconds": true}
+	boolFields := map[string]bool{"notify_on_failure": true}
+
 	var sets []string
 	var args []interface{}
 	for k, v := range fields {
 		if !allowed[k] {
 			continue
+		}
+		switch {
+		case stringFields[k]:
+			if _, ok := v.(string); !ok {
+				continue
+			}
+		case intFields[k]:
+			switch v.(type) {
+			case float64, int, int64:
+				// ok
+			default:
+				continue
+			}
+		case boolFields[k]:
+			if _, ok := v.(bool); !ok {
+				continue
+			}
 		}
 		sets = append(sets, k+" = ?")
 		args = append(args, v)

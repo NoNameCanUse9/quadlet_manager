@@ -5,15 +5,20 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/choken/quadlet-manager/internal/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		return origin == "" || origin == "http://localhost:9090" || origin == "http://localhost:8080"
+	},
 }
 
 type Message struct {
@@ -32,6 +37,7 @@ type Hub struct {
 	broadcast  chan []byte
 	register   chan *Client
 	unregister chan *Client
+	jwtSecret  []byte
 }
 
 func NewHub() *Hub {
@@ -41,6 +47,11 @@ func NewHub() *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
+}
+
+// SetJWTSecret enables JWT authentication for WebSocket connections.
+func (h *Hub) SetJWTSecret(secret []byte) {
+	h.jwtSecret = secret
 }
 
 func (h *Hub) Run() {
@@ -84,6 +95,24 @@ func (h *Hub) Broadcast(msg Message) {
 }
 
 func (h *Hub) HandleWebSocket(c *gin.Context) {
+	// Validate JWT token from query param or Authorization header
+	if len(h.jwtSecret) > 0 {
+		token := c.Query("token")
+		if token == "" {
+			if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {
+				token = strings.TrimPrefix(auth, "Bearer ")
+			}
+		}
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			return
+		}
+		if _, err := auth.ValidateToken(h.jwtSecret, token); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+	}
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("ws: upgrade error: %v", err)
@@ -166,7 +195,17 @@ func (h *Hub) StartAlertBroadcaster(ctx context.Context, interval time.Duration,
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
+
+		// Warmup: snapshot current state to avoid false alerts on startup
 		previousFailed := make(map[string]bool)
+		if units, err := source(ctx); err == nil {
+			for _, u := range units {
+				if u.ActiveState == "failed" {
+					previousFailed[u.Name] = true
+				}
+			}
+		}
+
 		for {
 			select {
 			case <-ctx.Done():

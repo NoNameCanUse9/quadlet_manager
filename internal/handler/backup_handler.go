@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const maxBackupSize = 50 * 1024 * 1024 // 50MB
+
 type BackupHandler struct {
 	backup *service.BackupService
 }
@@ -37,9 +39,13 @@ func (h *BackupHandler) ImportBackup(c *gin.Context) {
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(file)
+	data, err := io.ReadAll(io.LimitReader(file, maxBackupSize+1))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if len(data) > maxBackupSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "backup file too large (max 50MB)"})
 		return
 	}
 
