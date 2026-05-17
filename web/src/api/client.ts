@@ -1,10 +1,21 @@
+import { useAuth } from '@/store/useAuth'
+
 const BASE = '/api/v1'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = useAuth.getState().token
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...init,
   })
+  if (res.status === 401) {
+    useAuth.getState().logout()
+    throw new Error('unauthorized')
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || `HTTP ${res.status}`)
@@ -13,6 +24,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  request,
   // System
   getSystemInfo: () => request<SystemInfo>('/system/info'),
 

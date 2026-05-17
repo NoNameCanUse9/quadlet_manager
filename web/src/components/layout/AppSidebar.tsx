@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router'
+import { NavLink, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
@@ -9,9 +9,12 @@ import {
   Network,
   FileText,
   Settings,
+  Users,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/useApp'
+import { useAuth } from '@/store/useAuth'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, labelKey: 'sidebar.dashboard' },
@@ -27,6 +30,14 @@ const navItems = [
 export function AppSidebar() {
   const { t } = useTranslation()
   const systemInfo = useApp((s) => s.systemInfo)
+  const user = useAuth((s) => s.user)
+  const logout = useAuth((s) => s.logout)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <aside className="w-56 flex-shrink-0 border-r border-border bg-surface flex flex-col">
@@ -55,9 +66,37 @@ export function AppSidebar() {
             <span>{t(item.labelKey)}</span>
           </NavLink>
         ))}
+        {user?.role === 'admin' && (
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 px-4 py-2 text-xs transition-all duration-200',
+                isActive
+                  ? 'border-l-2 border-accent text-accent bg-accent-dim'
+                  : 'border-l-2 border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-raised'
+              )
+            }
+          >
+            <Users size={14} />
+            <span>Users</span>
+          </NavLink>
+        )}
       </nav>
 
-      <div className="border-t border-border px-4 py-3 text-[10px] text-text-muted space-y-1">
+      <div className="border-t border-border px-4 py-3 text-[10px] text-text-muted space-y-2">
+        {user && (
+          <div className="flex items-center justify-between">
+            <span className="text-text-secondary">{user.username} ({user.role})</span>
+            <button
+              onClick={handleLogout}
+              className="p-1 text-text-muted hover:text-danger transition-colors"
+              title="Logout"
+            >
+              <LogOut size={12} />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span
             className={cn(

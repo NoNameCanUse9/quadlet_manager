@@ -8,14 +8,18 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/choken/quadlet-manager/internal/auth"
 	"github.com/choken/quadlet-manager/internal/config"
 	"github.com/choken/quadlet-manager/internal/handler"
 	"github.com/choken/quadlet-manager/internal/middleware"
 	"github.com/choken/quadlet-manager/internal/provider"
 	"github.com/choken/quadlet-manager/internal/service"
+	"github.com/choken/quadlet-manager/internal/store"
 	"github.com/choken/quadlet-manager/internal/ws"
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +33,8 @@ func main() {
 	quadletDir := flag.String("quadlet-dir", "", "Override Quadlet scan directory")
 	podmanSocket := flag.String("podman-socket", "", "Override Podman socket path")
 	devMode := flag.Bool("dev", false, "Enable dev mode (proxy to Vite)")
+	jwtSecret := flag.String("jwt-secret", "", "JWT secret (auto-generated if empty)")
+	dbPath := flag.String("db", "", "SQLite database path")
 	flag.Parse()
 
 	var rootlessPtr *bool
@@ -47,6 +53,50 @@ func main() {
 	if err := cfg.Validate(); err != nil {
 		log.Fatalf("config: %v", err)
 	}
+
+	// Determine DB path
+	dbFilePath := *dbPath
+	if dbFilePath == "" {
+		if cfg.Rootless {
+			home, _ := os.UserHomeDir()
+			dbFilePath = filepath.Join(home, ".config", "quadlet-manager", "data.db")
+		} else {
+			dbFilePath = "/var/lib/quadlet-manager/data.db"
+		}
+	}
+	// Ensure directory exists
+	os.MkdirAll(filepath.Dir(dbFilePath), 0755)
+
+	// Initialize database
+	db, err := store.NewDB(dbFilePath)
+	if err != nil {
+		log.Fatalf("database: %v", err)
+	}
+	defer db.Close()
+	log.Printf("database: %s", dbFilePath)
+
+	// Initialize JWT secret
+	secret := []byte(*jwtSecret)
+	if len(secret) == 0 {
+		// Try to load from DB
+		var stored string
+		err := db.QueryRow("SELECT value FROM config WHERE key = 'jwt_secret'").Scan(&stored)
+		if err != nil {
+			// Generate new secret
+			secret, err = auth.GenerateSecret()
+			if err != nil {
+				log.Fatalf("generate jwt secret: %v", err)
+			}
+			db.Exec("INSERT OR REPLACE INTO config (key, value) VALUES ('jwt_secret', ?)", string(secret))
+			log.Printf("JWT secret generated and stored")
+		} else {
+			secret = []byte(stored)
+			log.Printf("JWT secret loaded from database")
+		}
+	}
+
+	// Initialize auth service
+	authSvc := auth.NewService(db, secret)
 
 	// Initialize providers
 	systemdProvider := newSystemdProvider(cfg)
@@ -73,40 +123,71 @@ func main() {
 	fileH := handler.NewFileHandler(fileSvc)
 	containerH := handler.NewContainerHandler(containerSvc)
 	statsH := handler.NewStatsHandler(containerSvc, hub)
+	authH := handler.NewAuthHandler(authSvc)
+	settingsH := handler.NewSettingsHandler(authSvc)
 
 	// Setup router
 	r := gin.Default()
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())
 
-	api := r.Group("/api/v1")
+	// Public auth routes (no JWT required)
+	authGroup := r.Group("/api/v1/auth")
 	{
-		api.GET("/system/info", systemH.GetSystemInfo)
+		authGroup.GET("/init", authH.CheckInit)
+		authGroup.POST("/init", authH.InitAdmin)
+		authGroup.POST("/login", authH.Login)
+	}
 
-		api.GET("/units", unitH.ListUnits)
-		api.GET("/units/:name", unitH.GetUnit)
-		api.POST("/units/:name/start", unitH.StartUnit)
-		api.POST("/units/:name/stop", unitH.StopUnit)
-		api.POST("/units/:name/restart", unitH.RestartUnit)
-		api.POST("/units/:name/enable", unitH.EnableUnit)
-		api.POST("/units/:name/disable", unitH.DisableUnit)
-		api.POST("/daemon/reload", unitH.DaemonReload)
+	// Protected routes (JWT required)
+	protected := r.Group("/api/v1")
+	protected.Use(middleware.JWTAuth(secret))
+	{
+		// Auth (authenticated)
+		protected.GET("/auth/me", authH.Me)
+		protected.GET("/settings", settingsH.GetSettings)
+		protected.PUT("/settings", settingsH.UpdateSettings)
 
-		api.GET("/files", fileH.ListFiles)
-		api.GET("/files/:filename", fileH.ReadFile)
-		api.POST("/files", fileH.CreateFile)
-		api.PUT("/files/:filename", fileH.UpdateFile)
-		api.DELETE("/files/:filename", fileH.DeleteFile)
-		api.POST("/files/:filename/apply", fileH.ApplyFile)
-		api.POST("/files/validate", fileH.ValidateFile)
+		// Admin only
+		admin := protected.Group("/auth")
+		admin.Use(middleware.RequireRole("admin"))
+		{
+			admin.POST("/register", authH.Register)
+			admin.GET("/users", authH.ListUsers)
+			admin.DELETE("/users/:id", authH.DeleteUser)
+			admin.PUT("/users/:id", authH.UpdateUser)
+		}
 
-		api.GET("/containers", containerH.ListContainers)
-		api.GET("/containers/:id/logs", containerH.GetContainerLogs)
-		api.GET("/containers/images", containerH.ListImages)
-		api.GET("/containers/volumes", containerH.ListVolumes)
-		api.GET("/containers/networks", containerH.ListNetworks)
+		// System/Unit routes
+		protected.GET("/system/info", systemH.GetSystemInfo)
 
-		api.GET("/stats", statsH.GetStats)
+		protected.GET("/units", unitH.ListUnits)
+		protected.GET("/units/:name", unitH.GetUnit)
+		protected.POST("/units/:name/start", unitH.StartUnit)
+		protected.POST("/units/:name/stop", unitH.StopUnit)
+		protected.POST("/units/:name/restart", unitH.RestartUnit)
+		protected.POST("/units/:name/enable", unitH.EnableUnit)
+		protected.POST("/units/:name/disable", unitH.DisableUnit)
+		protected.POST("/daemon/reload", unitH.DaemonReload)
+
+		// File routes
+		protected.GET("/files", fileH.ListFiles)
+		protected.GET("/files/:filename", fileH.ReadFile)
+		protected.POST("/files", fileH.CreateFile)
+		protected.PUT("/files/:filename", fileH.UpdateFile)
+		protected.DELETE("/files/:filename", fileH.DeleteFile)
+		protected.POST("/files/:filename/apply", fileH.ApplyFile)
+		protected.POST("/files/validate", fileH.ValidateFile)
+
+		// Container routes
+		protected.GET("/containers", containerH.ListContainers)
+		protected.GET("/containers/:id/logs", containerH.GetContainerLogs)
+		protected.GET("/containers/images", containerH.ListImages)
+		protected.GET("/containers/volumes", containerH.ListVolumes)
+		protected.GET("/containers/networks", containerH.ListNetworks)
+
+		// Stats
+		protected.GET("/stats", statsH.GetStats)
 	}
 
 	r.GET("/ws", statsH.HandleWebSocket)
@@ -116,13 +197,11 @@ func main() {
 		staticFS, _ := fs.Sub(webDist, "web/dist")
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
-			// Try to serve static file
 			if f, err := staticFS.Open(strings.TrimPrefix(path, "/")); err == nil {
 				f.Close()
 				http.FileServer(http.FS(staticFS)).ServeHTTP(c.Writer, c.Request)
 				return
 			}
-			// SPA fallback: serve index.html
 			c.FileFromFS("/", http.FS(staticFS))
 		})
 	}
@@ -144,7 +223,6 @@ func flagWasSet(name string) bool {
 	return found
 }
 
-// newSystemdProvider tries the real D-Bus provider, falls back to mock.
 func newSystemdProvider(cfg config.Config) provider.SystemdProvider {
 	dbus := provider.NewDBusSystemdProvider(cfg.Rootless)
 	if err := dbus.Connect(context.Background()); err != nil {
