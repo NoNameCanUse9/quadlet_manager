@@ -12,6 +12,8 @@ import { NetworksPage } from '@/pages/NetworksPage'
 import { FilesPage } from '@/pages/FilesPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { AdminUsersPage } from '@/pages/AdminUsersPage'
+import { TerminalPage } from '@/pages/TerminalPage'
+import { BackupPage } from '@/pages/BackupPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -33,6 +35,8 @@ export const router = createBrowserRouter([
       { path: 'files', element: <FilesPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'admin/users', element: <AdminUsersPage /> },
+      { path: 'containers/:id/exec/:exec_id', element: <TerminalPage /> },
+      { path: 'backup', element: <BackupPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

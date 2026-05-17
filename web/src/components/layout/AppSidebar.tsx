@@ -11,6 +11,7 @@ import {
   Settings,
   Users,
   LogOut,
+  Archive,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp } from '@/store/useApp'
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/volumes', icon: Database, labelKey: 'sidebar.volumes' },
   { to: '/networks', icon: Network, labelKey: 'sidebar.networks' },
   { to: '/files', icon: FileText, labelKey: 'files.title' },
+  { to: '/backup', icon: Archive, labelKey: 'Backup' },
   { to: '/settings', icon: Settings, labelKey: 'sidebar.settings' },
 ]
 
