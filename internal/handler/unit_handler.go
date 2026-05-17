@@ -18,7 +18,8 @@ func NewUnitHandler(units *service.UnitService, hub *ws.Hub) *UnitHandler {
 }
 
 func (h *UnitHandler) ListUnits(c *gin.Context) {
-	units, err := h.units.ListUnits(c.Request.Context())
+	userID := c.GetInt64("user_id")
+	units, err := h.units.ListUnits(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -17,7 +17,8 @@ func NewFileHandler(files *service.FileService) *FileHandler {
 }
 
 func (h *FileHandler) ListFiles(c *gin.Context) {
-	files, err := h.files.ListFiles(c.Request.Context())
+	userID := c.GetInt64("user_id")
+	files, err := h.files.ListFiles(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -26,8 +27,9 @@ func (h *FileHandler) ListFiles(c *gin.Context) {
 }
 
 func (h *FileHandler) ReadFile(c *gin.Context) {
+	userID := c.GetInt64("user_id")
 	filename := c.Param("filename")
-	content, err := h.files.ReadFile(c.Request.Context(), filename)
+	content, err := h.files.ReadFile(c.Request.Context(), userID, filename)
 	if err != nil {
 		status := http.StatusBadRequest
 		if strings.Contains(err.Error(), "not found") {
@@ -45,12 +47,13 @@ type fileRequest struct {
 }
 
 func (h *FileHandler) CreateFile(c *gin.Context) {
+	userID := c.GetInt64("user_id")
 	var req fileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.files.WriteFile(c.Request.Context(), req.Filename, req.Content); err != nil {
+	if err := h.files.WriteFile(c.Request.Context(), userID, req.Filename, req.Content); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -58,6 +61,7 @@ func (h *FileHandler) CreateFile(c *gin.Context) {
 }
 
 func (h *FileHandler) UpdateFile(c *gin.Context) {
+	userID := c.GetInt64("user_id")
 	filename := c.Param("filename")
 	var req struct {
 		Content string `json:"content" binding:"required"`
@@ -66,7 +70,7 @@ func (h *FileHandler) UpdateFile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.files.WriteFile(c.Request.Context(), filename, req.Content); err != nil {
+	if err := h.files.WriteFile(c.Request.Context(), userID, filename, req.Content); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -74,8 +78,9 @@ func (h *FileHandler) UpdateFile(c *gin.Context) {
 }
 
 func (h *FileHandler) DeleteFile(c *gin.Context) {
+	userID := c.GetInt64("user_id")
 	filename := c.Param("filename")
-	if err := h.files.DeleteFile(c.Request.Context(), filename); err != nil {
+	if err := h.files.DeleteFile(c.Request.Context(), userID, filename); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -83,6 +88,7 @@ func (h *FileHandler) DeleteFile(c *gin.Context) {
 }
 
 func (h *FileHandler) ApplyFile(c *gin.Context) {
+	userID := c.GetInt64("user_id")
 	filename := c.Param("filename")
 	var req struct {
 		Content string `json:"content" binding:"required"`
@@ -91,7 +97,7 @@ func (h *FileHandler) ApplyFile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.files.ApplyFile(c.Request.Context(), filename, req.Content); err != nil {
+	if err := h.files.ApplyFile(c.Request.Context(), userID, filename, req.Content); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

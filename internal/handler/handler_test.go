@@ -21,8 +21,8 @@ func setupRouter(cfg config.Config) (*gin.Engine, *provider.MockSystemd, *provid
 	fs := provider.NewMockQuadletFS()
 	hub := ws.NewHub()
 
-	unitSvc := service.NewUnitService(sd, fs)
-	fileSvc := service.NewFileService(fs, sd)
+	unitSvc := service.NewUnitService(sd, fs, nil, "")
+	fileSvc := service.NewFileService(fs, sd, nil, "")
 
 	systemH := NewSystemHandler(cfg, unitSvc)
 	unitH := NewUnitHandler(unitSvc, hub)
@@ -86,7 +86,8 @@ func TestUnitHandler_ListUnits_Empty(t *testing.T) {
 
 func TestUnitHandler_ListUnits_WithData(t *testing.T) {
 	cfg := config.New(config.Options{})
-	r, sd, _ := setupRouter(cfg)
+	r, sd, fs := setupRouter(cfg)
+	fs.Files["nginx.container"] = "[Container]\nImage=nginx\n"
 	sd.Units["nginx.service"] = model.UnitStatus{
 		Name: "nginx.service", ActiveState: "active",
 	}

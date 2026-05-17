@@ -45,7 +45,7 @@ func TestUnitService_StartUnit_ReloadsFirst(t *testing.T) {
 		Name: "nginx.service", ActiveState: "inactive", SubState: "dead",
 	}
 	fs := provider.NewMockQuadletFS()
-	svc := NewUnitService(sd, fs)
+	svc := NewUnitService(sd, fs, nil, "")
 
 	err := svc.StartUnit(context.Background(), "nginx.service")
 	if err != nil {
@@ -62,7 +62,7 @@ func TestUnitService_StartUnit_ReloadFails(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	sd.Err = fmt.Errorf("dbus connection lost")
 	fs := provider.NewMockQuadletFS()
-	svc := NewUnitService(sd, fs)
+	svc := NewUnitService(sd, fs, nil, "")
 
 	err := svc.StartUnit(context.Background(), "nginx.service")
 	if err == nil {
@@ -75,9 +75,11 @@ func TestUnitService_ListUnits(t *testing.T) {
 	sd.Units["a.service"] = model.UnitStatus{Name: "a.service", ActiveState: "active"}
 	sd.Units["b.service"] = model.UnitStatus{Name: "b.service", ActiveState: "inactive"}
 	fs := provider.NewMockQuadletFS()
-	svc := NewUnitService(sd, fs)
+	fs.Files["a.container"] = "[Container]\nImage=alpine\n"
+	fs.Files["b.container"] = "[Container]\nImage=alpine\n"
+	svc := NewUnitService(sd, fs, nil, "")
 
-	units, err := svc.ListUnits(context.Background())
+	units, err := svc.ListUnits(context.Background(), 0)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -91,9 +93,9 @@ func TestUnitService_ListUnits(t *testing.T) {
 func TestFileService_WriteFile_ValidatesFilename(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	err := svc.WriteFile(context.Background(), "../etc/passwd", "evil")
+	err := svc.WriteFile(context.Background(), 0, "../etc/passwd", "evil")
 	if err == nil {
 		t.Fatal("expected validation error for directory traversal")
 	}
@@ -102,9 +104,9 @@ func TestFileService_WriteFile_ValidatesFilename(t *testing.T) {
 func TestFileService_WriteFile_RejectsInvalidExtension(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	err := svc.WriteFile(context.Background(), "notes.txt", "content")
+	err := svc.WriteFile(context.Background(), 0, "notes.txt", "content")
 	if err == nil {
 		t.Fatal("expected validation error for .txt extension")
 	}
@@ -116,10 +118,10 @@ func TestFileService_ApplyFile_WritesAndStarts(t *testing.T) {
 		Name: "nginx.service", ActiveState: "inactive", SubState: "dead",
 	}
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	content := "[Container]\nImage=docker.io/nginx:latest\n"
-	err := svc.ApplyFile(context.Background(), "nginx.container", content)
+	err := svc.ApplyFile(context.Background(), 0, "nginx.container", content)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -142,9 +144,9 @@ func TestFileService_ApplyFile_WritesAndStarts(t *testing.T) {
 func TestFileService_ApplyFile_InvalidFilename(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	err := svc.ApplyFile(context.Background(), "../../evil.container", "content")
+	err := svc.ApplyFile(context.Background(), 0, "../../evil.container", "content")
 	if err == nil {
 		t.Fatal("expected validation error")
 	}
@@ -153,7 +155,7 @@ func TestFileService_ApplyFile_InvalidFilename(t *testing.T) {
 func TestFileService_ValidateContent_MissingImage(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	_, warnings, err := svc.ValidateContent("[Container]\nVolume=/data:/data\n")
 	if err != nil {
@@ -167,7 +169,7 @@ func TestFileService_ValidateContent_MissingImage(t *testing.T) {
 func TestFileService_ValidateContent_ValidConfig(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	cfg, warnings, err := svc.ValidateContent("[Container]\nImage=nginx:latest\nPublishPort=80:80\n")
 	if err != nil {
@@ -185,9 +187,9 @@ func TestFileService_DeleteFile(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
 	fs.Files["old.container"] = "[Container]\nImage=alpine\n"
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	err := svc.DeleteFile(context.Background(), "old.container")
+	err := svc.DeleteFile(context.Background(), 0, "old.container")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -201,7 +203,7 @@ func TestFileService_DeleteFile(t *testing.T) {
 func TestFileService_ValidateContent_EmptyContent(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	_, _, err := svc.ValidateContent("")
 	if err == nil {
@@ -212,7 +214,7 @@ func TestFileService_ValidateContent_EmptyContent(t *testing.T) {
 func TestFileService_ValidateContent_NoContainerSection(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	_, warnings, err := svc.ValidateContent("[Unit]\nDescription=test\n")
 	if err != nil {
@@ -232,7 +234,7 @@ func TestFileService_ValidateContent_NoContainerSection(t *testing.T) {
 func TestFileService_ValidateContent_MultipleWarnings(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
 	// Container section with no Image
 	_, warnings, err := svc.ValidateContent("[Container]\nVolume=/data:/data\n")
@@ -250,9 +252,9 @@ func TestFileService_ApplyFile_VolumeUnit(t *testing.T) {
 		Name: "data.volume", ActiveState: "inactive", SubState: "dead",
 	}
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	err := svc.ApplyFile(context.Background(), "data.volume", "[Volume]\nVolumeName=data\n")
+	err := svc.ApplyFile(context.Background(), 0, "data.volume", "[Volume]\nVolumeName=data\n")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -264,9 +266,9 @@ func TestFileService_ApplyFile_VolumeUnit(t *testing.T) {
 func TestFileService_ReadFile_NotFound(t *testing.T) {
 	sd := provider.NewMockSystemd(true)
 	fs := provider.NewMockQuadletFS()
-	svc := NewFileService(fs, sd)
+	svc := NewFileService(fs, sd, nil, "")
 
-	_, err := svc.ReadFile(context.Background(), "nonexistent.container")
+	_, err := svc.ReadFile(context.Background(), 0, "nonexistent.container")
 	if err == nil {
 		t.Fatal("expected error for nonexistent file")
 	}

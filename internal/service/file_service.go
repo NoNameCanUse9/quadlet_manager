@@ -10,49 +10,62 @@ import (
 	"github.com/choken/quadlet-manager/internal/provider"
 )
 
+type SettingsLookup interface {
+	GetByUserID(userID int64) (*model.UserSettings, error)
+}
+
 type FileService struct {
-	fs      provider.QuadletFS
-	systemd provider.SystemdProvider
+	defaultFS provider.QuadletFS
+	systemd   provider.SystemdProvider
+	settings  SettingsLookup
+	defaultDir string
 }
 
-func NewFileService(fs provider.QuadletFS, systemd provider.SystemdProvider) *FileService {
-	return &FileService{fs: fs, systemd: systemd}
+func NewFileService(fs provider.QuadletFS, systemd provider.SystemdProvider, settings SettingsLookup, defaultDir string) *FileService {
+	return &FileService{defaultFS: fs, systemd: systemd, settings: settings, defaultDir: defaultDir}
 }
 
-func (s *FileService) ListFiles(ctx context.Context) ([]model.QuadletFile, error) {
-	return s.fs.ScanDir(ctx)
+func (s *FileService) resolveFS(ctx context.Context, userID int64) provider.QuadletFS {
+	if s.settings != nil && userID > 0 {
+		if st, err := s.settings.GetByUserID(userID); err == nil && st.QuadletDir != "" {
+			return provider.NewQuadletFSImpl(st.QuadletDir)
+		}
+	}
+	return s.defaultFS
 }
 
-func (s *FileService) ReadFile(ctx context.Context, filename string) (string, error) {
-	if err := s.fs.ValidateFilename(filename); err != nil {
+func (s *FileService) ListFiles(ctx context.Context, userID int64) ([]model.QuadletFile, error) {
+	return s.resolveFS(ctx, userID).ScanDir(ctx)
+}
+
+func (s *FileService) ReadFile(ctx context.Context, userID int64, filename string) (string, error) {
+	if err := s.defaultFS.ValidateFilename(filename); err != nil {
 		return "", err
 	}
-	return s.fs.ReadFile(ctx, filename)
+	return s.resolveFS(ctx, userID).ReadFile(ctx, filename)
 }
 
-func (s *FileService) WriteFile(ctx context.Context, filename string, content string) error {
-	if err := s.fs.ValidateFilename(filename); err != nil {
+func (s *FileService) WriteFile(ctx context.Context, userID int64, filename string, content string) error {
+	if err := s.defaultFS.ValidateFilename(filename); err != nil {
 		return err
 	}
-	return s.fs.WriteFile(ctx, filename, content)
+	return s.resolveFS(ctx, userID).WriteFile(ctx, filename, content)
 }
 
-func (s *FileService) DeleteFile(ctx context.Context, filename string) error {
-	if err := s.fs.ValidateFilename(filename); err != nil {
+func (s *FileService) DeleteFile(ctx context.Context, userID int64, filename string) error {
+	if err := s.defaultFS.ValidateFilename(filename); err != nil {
 		return err
 	}
-	return s.fs.DeleteFile(ctx, filename)
+	return s.resolveFS(ctx, userID).DeleteFile(ctx, filename)
 }
 
-func (s *FileService) ApplyFile(ctx context.Context, filename string, content string) error {
-	if err := s.WriteFile(ctx, filename, content); err != nil {
+func (s *FileService) ApplyFile(ctx context.Context, userID int64, filename string, content string) error {
+	if err := s.WriteFile(ctx, userID, filename, content); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 	if err := s.systemd.DaemonReload(ctx); err != nil {
 		return fmt.Errorf("daemon reload: %w", err)
 	}
-	// Derive the systemd unit name from the filename.
-	// e.g. "nginx.container" -> "nginx.service"
 	unitName := filenameToUnitName(filename)
 	if unitName != "" {
 		if err := s.systemd.StartUnit(ctx, unitName); err != nil {
@@ -80,7 +93,6 @@ func (s *FileService) ValidateContent(content string) (*parser.QuadletConfig, []
 	return cfg, warnings, nil
 }
 
-// filenameToUnitName converts a Quadlet filename to its systemd unit name.
 func filenameToUnitName(filename string) string {
 	ext := strings.LastIndex(filename, ".")
 	if ext < 0 {

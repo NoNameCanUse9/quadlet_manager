@@ -3,22 +3,78 @@ package service
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/choken/quadlet-manager/internal/model"
 	"github.com/choken/quadlet-manager/internal/provider"
 )
 
 type UnitService struct {
-	systemd provider.SystemdProvider
-	quadlet provider.QuadletFS
+	systemd    provider.SystemdProvider
+	quadlet    provider.QuadletFS
+	settings   SettingsLookup
+	defaultDir string
 }
 
-func NewUnitService(systemd provider.SystemdProvider, quadlet provider.QuadletFS) *UnitService {
-	return &UnitService{systemd: systemd, quadlet: quadlet}
+func NewUnitService(systemd provider.SystemdProvider, quadlet provider.QuadletFS, settings SettingsLookup, defaultDir string) *UnitService {
+	return &UnitService{systemd: systemd, quadlet: quadlet, settings: settings, defaultDir: defaultDir}
 }
 
-func (s *UnitService) ListUnits(ctx context.Context) ([]model.UnitStatus, error) {
-	return s.systemd.ListUnits(ctx)
+func (s *UnitService) resolveFS(ctx context.Context, userID int64) provider.QuadletFS {
+	if s.settings != nil && userID > 0 {
+		if st, err := s.settings.GetByUserID(userID); err == nil && st.QuadletDir != "" {
+			return provider.NewQuadletFSImpl(st.QuadletDir)
+		}
+	}
+	return s.quadlet
+}
+
+func (s *UnitService) ListUnits(ctx context.Context, userID int64) ([]model.UnitStatus, error) {
+	fs := s.resolveFS(ctx, userID)
+	files, err := fs.ScanDir(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("scan quadlet directory: %w", err)
+	}
+
+	serviceMap := make(map[string]string)
+	for _, f := range files {
+		ext := filepath.Ext(f.Name)
+		base := strings.TrimSuffix(f.Name, ext)
+		var svcName string
+		switch ext {
+		case ".container":
+			svcName = base + ".service"
+		case ".volume":
+			svcName = base + "-volume.service"
+		case ".network":
+			svcName = base + "-network.service"
+		case ".pod":
+			svcName = base + "-pod.service"
+		case ".kube":
+			svcName = base + "-kube.service"
+		case ".image":
+			svcName = base + "-image.service"
+		default:
+			continue
+		}
+		serviceMap[svcName] = f.Path
+	}
+
+	allUnits, err := s.systemd.ListUnits(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list systemd units: %w", err)
+	}
+
+	var filtered []model.UnitStatus
+	for _, u := range allUnits {
+		if path, ok := serviceMap[u.Name]; ok {
+			u.SourcePath = path
+			filtered = append(filtered, u)
+		}
+	}
+
+	return filtered, nil
 }
 
 func (s *UnitService) GetUnitStatus(ctx context.Context, name string) (*model.UnitStatus, error) {
