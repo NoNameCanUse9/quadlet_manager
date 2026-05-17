@@ -9,11 +9,12 @@ import (
 )
 
 type ContainerHandler struct {
-	containers *service.ContainerService
+	containers   *service.ContainerService
+	orchestrator *service.ContainerOrchestrator
 }
 
-func NewContainerHandler(containers *service.ContainerService) *ContainerHandler {
-	return &ContainerHandler{containers: containers}
+func NewContainerHandler(containers *service.ContainerService, orchestrator *service.ContainerOrchestrator) *ContainerHandler {
+	return &ContainerHandler{containers: containers, orchestrator: orchestrator}
 }
 
 func (h *ContainerHandler) ListContainers(c *gin.Context) {
@@ -41,29 +42,60 @@ func (h *ContainerHandler) GetContainerLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": id, "logs": logs})
 }
 
-func (h *ContainerHandler) ListImages(c *gin.Context) {
-	images, err := h.containers.ListImages(c.Request.Context())
-	if err != nil {
+func (h *ContainerHandler) StartContainer(c *gin.Context) {
+	if err := h.orchestrator.Start(c.Request.Context(), c.Param("id")); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, images)
+	c.JSON(http.StatusOK, gin.H{"status": "started"})
 }
 
-func (h *ContainerHandler) ListVolumes(c *gin.Context) {
-	volumes, err := h.containers.ListVolumes(c.Request.Context())
-	if err != nil {
+func (h *ContainerHandler) StopContainer(c *gin.Context) {
+	if err := h.orchestrator.Stop(c.Request.Context(), c.Param("id"), nil); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, volumes)
+	c.JSON(http.StatusOK, gin.H{"status": "stopped"})
 }
 
-func (h *ContainerHandler) ListNetworks(c *gin.Context) {
-	networks, err := h.containers.ListNetworks(c.Request.Context())
+func (h *ContainerHandler) RestartContainer(c *gin.Context) {
+	if err := h.orchestrator.Restart(c.Request.Context(), c.Param("id"), nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "restarted"})
+}
+
+func (h *ContainerHandler) PauseContainer(c *gin.Context) {
+	if err := h.containers.PauseContainer(c.Request.Context(), c.Param("id")); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "paused"})
+}
+
+func (h *ContainerHandler) UnpauseContainer(c *gin.Context) {
+	if err := h.containers.UnpauseContainer(c.Request.Context(), c.Param("id")); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "unpaused"})
+}
+
+func (h *ContainerHandler) RemoveContainer(c *gin.Context) {
+	force := c.Query("force") == "true"
+	if err := h.orchestrator.Remove(c.Request.Context(), c.Param("id"), force); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "removed"})
+}
+
+func (h *ContainerHandler) InspectContainer(c *gin.Context) {
+	info, err := h.containers.InspectContainer(c.Request.Context(), c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, networks)
+	c.JSON(http.StatusOK, info)
 }
