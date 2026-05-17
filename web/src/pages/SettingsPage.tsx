@@ -26,7 +26,7 @@ export function SettingsPage() {
 
         <SettingsRow label={t('settings.rootless')}>
           <span className="text-xs text-text-secondary">
-            {systemInfo ? (systemInfo.rootless ? 'Yes' : 'No') : '-'}
+            {systemInfo ? (systemInfo.rootless ? t('common.yes') : t('common.no')) : '-'}
           </span>
         </SettingsRow>
 

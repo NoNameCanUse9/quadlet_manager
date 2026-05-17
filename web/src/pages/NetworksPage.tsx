@@ -26,7 +26,7 @@ export function NetworksPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
-          {t('sidebar.networks')}
+          {t('networks.title')}
         </h2>
         <button
           onClick={fetch}
@@ -41,13 +41,13 @@ export function NetworksPage() {
         {loading ? (
           <div className="p-4 text-xs text-text-muted">{t('common.loading')}</div>
         ) : networks.length === 0 ? (
-          <div className="p-4 text-xs text-text-muted">No networks found</div>
+          <div className="p-4 text-xs text-text-muted">{t('networks.noData')}</div>
         ) : (
           <table className="w-full text-xs">
             <thead>
               <tr className="text-text-muted text-left border-b border-border bg-surface-raised">
-                <th className="px-3 py-2 font-medium">Name</th>
-                <th className="px-3 py-2 font-medium">ID</th>
+                <th className="px-3 py-2 font-medium">{t('networks.name')}</th>
+                <th className="px-3 py-2 font-medium">{t('networks.id')}</th>
               </tr>
             </thead>
             <tbody>

@@ -42,6 +42,33 @@
     "actions": "Actions",
     "noUnits": "No Quadlet units found"
   },
+  "containers": {
+    "title": "Containers",
+    "id": "ID",
+    "name": "Name",
+    "image": "Image",
+    "status": "Status",
+    "noData": "No containers found"
+  },
+  "images": {
+    "title": "Images",
+    "id": "ID",
+    "tags": "Tags",
+    "size": "Size",
+    "noData": "No images found"
+  },
+  "volumes": {
+    "title": "Volumes",
+    "name": "Name",
+    "mountPoint": "Mount Point",
+    "noData": "No volumes found"
+  },
+  "networks": {
+    "title": "Networks",
+    "name": "Name",
+    "id": "ID",
+    "noData": "No networks found"
+  },
   "files": {
     "title": "Quadlet Files",
     "create": "Create New",
@@ -52,7 +79,24 @@
     "delete": "Delete",
     "validate": "Validate",
     "wizard": "Wizard",
-    "editor": "Editor"
+    "editor": "Editor",
+    "selectFile": "Select a file to edit",
+    "valid": "Valid",
+    "invalid": "Invalid"
+  },
+  "wizard": {
+    "image": "Image",
+    "command": "Command",
+    "publishPort": "PublishPort",
+    "volume": "Volume",
+    "environment": "Environment",
+    "network": "Network",
+    "hostname": "Hostname",
+    "userGroup": "User / Group",
+    "uid": "UID (e.g. 1000)",
+    "gid": "GID (e.g. 1000)",
+    "restartPolicy": "Restart Policy",
+    "networkName": "Network name"
   },
   "common": {
     "loading": "Loading...",
@@ -60,7 +104,12 @@
     "success": "Success",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "yes": "Yes",
+    "no": "No",
+    "disconnected": "disconnected",
+    "rootless": "rootless",
+    "rootful": "rootful"
   },
   "settings": {
     "title": "Settings",

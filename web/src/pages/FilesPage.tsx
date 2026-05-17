@@ -208,7 +208,7 @@ export function FilesPage() {
                     ) : (
                       <AlertTriangle size={10} />
                     )}
-                    {validation.valid ? 'Valid' : 'Invalid'}
+                    {validation.valid ? t('files.valid') : t('files.invalid')}
                   </span>
                 )}
                 <ToolbarBtn

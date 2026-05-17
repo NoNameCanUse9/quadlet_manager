@@ -42,6 +42,33 @@
     "actions": "操作",
     "noUnits": "未找到 Quadlet 单元"
   },
+  "containers": {
+    "title": "容器",
+    "id": "ID",
+    "name": "名称",
+    "image": "镜像",
+    "status": "状态",
+    "noData": "未找到容器"
+  },
+  "images": {
+    "title": "镜像",
+    "id": "ID",
+    "tags": "标签",
+    "size": "大小",
+    "noData": "未找到镜像"
+  },
+  "volumes": {
+    "title": "存储卷",
+    "name": "名称",
+    "mountPoint": "挂载点",
+    "noData": "未找到存储卷"
+  },
+  "networks": {
+    "title": "网络",
+    "name": "名称",
+    "id": "ID",
+    "noData": "未找到网络"
+  },
   "files": {
     "title": "Quadlet 文件",
     "create": "新建",
@@ -52,7 +79,24 @@
     "delete": "删除",
     "validate": "验证",
     "wizard": "向导",
-    "editor": "编辑器"
+    "editor": "编辑器",
+    "selectFile": "选择文件进行编辑",
+    "valid": "有效",
+    "invalid": "无效"
+  },
+  "wizard": {
+    "image": "镜像",
+    "command": "命令",
+    "publishPort": "端口映射",
+    "volume": "卷挂载",
+    "environment": "环境变量",
+    "network": "网络",
+    "hostname": "主机名",
+    "userGroup": "用户 / 组",
+    "uid": "UID (如 1000)",
+    "gid": "GID (如 1000)",
+    "restartPolicy": "重启策略",
+    "networkName": "网络名称"
   },
   "common": {
     "loading": "加载中...",
@@ -60,7 +104,12 @@
     "success": "成功",
     "confirm": "确认",
     "cancel": "取消",
-    "refresh": "刷新"
+    "refresh": "刷新",
+    "yes": "是",
+    "no": "否",
+    "disconnected": "未连接",
+    "rootless": "rootless",
+    "rootful": "rootful"
   },
   "settings": {
     "title": "设置",

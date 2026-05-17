@@ -4,10 +4,12 @@ import { useUnits } from '@/store/useUnits'
 import { useApp } from '@/store/useApp'
 import { Play, Square, RotateCcw, RefreshCw, Power, PowerOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ErrorBanner } from '@/components/ui/ErrorBanner'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export function UnitsPage() {
   const { t } = useTranslation()
-  const { units, loading, fetchUnits, startUnit, stopUnit, restartUnit, enableUnit, disableUnit } =
+  const { units, loading, error, fetchUnits, startUnit, stopUnit, restartUnit, enableUnit, disableUnit } =
     useUnits()
   const selectFile = useApp((s) => s.selectFile)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -31,14 +33,19 @@ export function UnitsPage() {
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
           {t('units.title')}
         </h2>
-        <button
-          onClick={fetchUnits}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary transition-colors"
-        >
+        <div className="flex items-center gap-2">
+          {loading && <LoadingSpinner />}
+          <button
+            onClick={fetchUnits}
+            className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary transition-colors"
+          >
           <RefreshCw size={12} />
           {t('common.refresh')}
         </button>
+        </div>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="border border-border rounded bg-surface overflow-hidden">
         {loading ? (

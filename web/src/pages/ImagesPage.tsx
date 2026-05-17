@@ -26,7 +26,7 @@ export function ImagesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
-          {t('sidebar.images')}
+          {t('images.title')}
         </h2>
         <button
           onClick={fetch}
@@ -41,14 +41,14 @@ export function ImagesPage() {
         {loading ? (
           <div className="p-4 text-xs text-text-muted">{t('common.loading')}</div>
         ) : images.length === 0 ? (
-          <div className="p-4 text-xs text-text-muted">No images found</div>
+          <div className="p-4 text-xs text-text-muted">{t('images.noData')}</div>
         ) : (
           <table className="w-full text-xs">
             <thead>
               <tr className="text-text-muted text-left border-b border-border bg-surface-raised">
-                <th className="px-3 py-2 font-medium">ID</th>
-                <th className="px-3 py-2 font-medium">Tags</th>
-                <th className="px-3 py-2 font-medium">Size</th>
+                <th className="px-3 py-2 font-medium">{t('images.id')}</th>
+                <th className="px-3 py-2 font-medium">{t('images.tags')}</th>
+                <th className="px-3 py-2 font-medium">{t('images.size')}</th>
               </tr>
             </thead>
             <tbody>

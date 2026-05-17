@@ -68,9 +68,9 @@ export function AppSidebar() {
           <span>
             {systemInfo
               ? systemInfo.rootless
-                ? 'rootless'
-                : 'rootful'
-              : 'disconnected'}
+                ? t('common.rootless')
+                : t('common.rootful')
+              : t('common.disconnected')}
           </span>
         </div>
         {systemInfo && (

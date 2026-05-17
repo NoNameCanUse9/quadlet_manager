@@ -2,10 +2,12 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useContainers } from '@/store/useContainers'
 import { RefreshCw } from 'lucide-react'
+import { ErrorBanner } from '@/components/ui/ErrorBanner'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export function ContainersPage() {
   const { t } = useTranslation()
-  const { containers, loading, fetchContainers } = useContainers()
+  const { containers, loading, error, fetchContainers } = useContainers()
 
   useEffect(() => {
     fetchContainers()
@@ -15,30 +17,35 @@ export function ContainersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
-          {t('sidebar.containers')}
+          {t('containers.title')}
         </h2>
-        <button
-          onClick={fetchContainers}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary transition-colors"
-        >
-          <RefreshCw size={12} />
-          {t('common.refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          {loading && <LoadingSpinner />}
+          <button
+            onClick={fetchContainers}
+            className="flex items-center gap-1 px-2 py-1 text-[10px] text-text-muted hover:text-text-primary transition-colors"
+          >
+            <RefreshCw size={12} />
+            {t('common.refresh')}
+          </button>
+        </div>
       </div>
+
+      <ErrorBanner message={error} />
 
       <div className="border border-border rounded bg-surface overflow-hidden">
         {loading ? (
           <div className="p-4 text-xs text-text-muted">{t('common.loading')}</div>
         ) : containers.length === 0 ? (
-          <div className="p-4 text-xs text-text-muted">{t('dashboard.noContainers')}</div>
+          <div className="p-4 text-xs text-text-muted">{t('containers.noData')}</div>
         ) : (
           <table className="w-full text-xs">
             <thead>
               <tr className="text-text-muted text-left border-b border-border bg-surface-raised">
-                <th className="px-3 py-2 font-medium">ID</th>
-                <th className="px-3 py-2 font-medium">Name</th>
-                <th className="px-3 py-2 font-medium">Image</th>
-                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">{t('containers.id')}</th>
+                <th className="px-3 py-2 font-medium">{t('containers.name')}</th>
+                <th className="px-3 py-2 font-medium">{t('containers.image')}</th>
+                <th className="px-3 py-2 font-medium">{t('containers.status')}</th>
               </tr>
             </thead>
             <tbody>

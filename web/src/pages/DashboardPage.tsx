@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { useUnits } from '@/store/useUnits'
 import { useContainers } from '@/store/useContainers'
 import { Activity, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { ErrorBanner } from '@/components/ui/ErrorBanner'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export function DashboardPage() {
   const { t } = useTranslation()
-  const { units, loading: unitsLoading, fetchUnits } = useUnits()
-  const { containers, stats, fetchContainers, fetchStats } = useContainers()
+  const { units, loading: unitsLoading, error: unitsError, fetchUnits } = useUnits()
+  const { containers, stats, loading: containersLoading, error: containersError, fetchContainers, fetchStats } = useContainers()
 
   useEffect(() => {
     fetchUnits()
@@ -21,9 +23,15 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
-        {t('dashboard.title')}
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
+          {t('dashboard.title')}
+        </h2>
+        {(unitsLoading || containersLoading) && <LoadingSpinner />}
+      </div>
+
+      <ErrorBanner message={unitsError} />
+      <ErrorBanner message={containersError} />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-4 gap-3">
