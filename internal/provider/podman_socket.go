@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 type SocketPodmanProvider struct {
 	socketPath string
 	client     *http.Client
+	apiVersion string
 }
 
 func NewSocketPodmanProvider(socketPath string) *SocketPodmanProvider {
@@ -32,12 +34,27 @@ func (p *SocketPodmanProvider) Connect(_ context.Context) error {
 		},
 		Timeout: 30 * time.Second,
 	}
-	// Verify connection with a simple request
+
+	// Detect API version
 	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/info")
 	if err != nil {
 		return fmt.Errorf("podman socket connect: %w", err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	var info struct {
+		Version struct {
+			APIVersion string `json:"APIVersion"`
+		} `json:"version"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		p.apiVersion = "v5.0.0"
+		return nil
+	}
+	p.apiVersion = info.Version.APIVersion
+	if p.apiVersion == "" {
+		p.apiVersion = "v5.0.0"
+	}
 	return nil
 }
 
@@ -47,30 +64,56 @@ func (p *SocketPodmanProvider) Close() {
 	}
 }
 
-func (p *SocketPodmanProvider) ListContainers(_ context.Context) ([]model.ContainerInfo, error) {
-	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/containers/json?all=true")
+func (p *SocketPodmanProvider) APIVersion() string {
+	return p.apiVersion
+}
+
+// do executes an HTTP request against the Podman socket.
+func (p *SocketPodmanProvider) do(method, path string, body any) (*http.Response, error) {
+	var bodyReader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshal body: %w", err)
+		}
+		bodyReader = bytes.NewReader(data)
+	}
+	url := fmt.Sprintf("http://localhost/%s/libpod%s", p.apiVersion, path)
+	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("list containers: %w", err)
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	return p.client.Do(req)
+}
+
+// doJSON executes a request and decodes the JSON response into dst.
+func (p *SocketPodmanProvider) doJSON(method, path string, body any, dst any) error {
+	resp, err := p.do(method, path, body)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
-
-	var containers []model.ContainerInfo
-	if err := json.NewDecoder(resp.Body).Decode(&containers); err != nil {
-		return nil, fmt.Errorf("decode containers: %w", err)
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("podman %s %s: %s", method, path, string(msg))
 	}
-	return containers, nil
+	return json.NewDecoder(resp.Body).Decode(dst)
+}
+
+func (p *SocketPodmanProvider) ListContainers(_ context.Context) ([]model.ContainerInfo, error) {
+	var containers []model.ContainerInfo
+	err := p.doJSON("GET", "/containers/json?all=true", nil, &containers)
+	return containers, err
 }
 
 func (p *SocketPodmanProvider) GetContainerStats(_ context.Context, id string) (*model.ContainerStats, error) {
-	resp, err := p.client.Get(fmt.Sprintf("http://localhost/v5.0.0/libpod/containers/%s/stats?stream=false", id))
-	if err != nil {
-		return nil, fmt.Errorf("get stats for %s: %w", id, err)
-	}
-	defer resp.Body.Close()
-
 	var stats []model.ContainerStats
-	if err := json.NewDecoder(resp.Body).Decode(&stats); err != nil {
-		return nil, fmt.Errorf("decode stats: %w", err)
+	err := p.doJSON("GET", fmt.Sprintf("/containers/%s/stats?stream=false", id), nil, &stats)
+	if err != nil {
+		return nil, err
 	}
 	if len(stats) == 0 {
 		return nil, nil
@@ -79,80 +122,288 @@ func (p *SocketPodmanProvider) GetContainerStats(_ context.Context, id string) (
 }
 
 func (p *SocketPodmanProvider) GetAllStats(_ context.Context) ([]model.ContainerStats, error) {
-	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/containers/stats?stream=false")
-	if err != nil {
-		return nil, fmt.Errorf("get all stats: %w", err)
-	}
-	defer resp.Body.Close()
-
 	var stats []model.ContainerStats
-	if err := json.NewDecoder(resp.Body).Decode(&stats); err != nil {
-		return nil, fmt.Errorf("decode stats: %w", err)
-	}
-	return stats, nil
+	err := p.doJSON("GET", "/containers/stats?stream=false", nil, &stats)
+	return stats, err
 }
 
 func (p *SocketPodmanProvider) GetContainerLogs(_ context.Context, id string, tail int) ([]string, error) {
-	url := fmt.Sprintf("http://localhost/v5.0.0/libpod/containers/%s/logs?tail=%d&follow=false", id, tail)
-	resp, err := p.client.Get(url)
+	resp, err := p.do("GET", fmt.Sprintf("/containers/%s/logs?tail=%d&stdout=true&stderr=true", id, tail), nil)
 	if err != nil {
-		return nil, fmt.Errorf("get logs for %s: %w", id, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read logs: %w", err)
+		return nil, err
 	}
-	if len(body) == 0 {
+	if len(data) == 0 {
 		return nil, nil
 	}
-	return strings.Split(string(body), "\n"), nil
+	return strings.Split(string(data), "\n"), nil
+}
+
+func (p *SocketPodmanProvider) StartContainer(_ context.Context, id string) error {
+	resp, err := p.do("POST", fmt.Sprintf("/containers/%s/start", id), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("start container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) StopContainer(_ context.Context, id string, timeout *int) error {
+	path := fmt.Sprintf("/containers/%s/stop", id)
+	if timeout != nil {
+		path = fmt.Sprintf("%s?timeout=%d", path, *timeout)
+	}
+	resp, err := p.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("stop container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) RestartContainer(_ context.Context, id string, timeout *int) error {
+	path := fmt.Sprintf("/containers/%s/restart", id)
+	if timeout != nil {
+		path = fmt.Sprintf("%s?timeout=%d", path, *timeout)
+	}
+	resp, err := p.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("restart container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) PauseContainer(_ context.Context, id string) error {
+	resp, err := p.do("POST", fmt.Sprintf("/containers/%s/pause", id), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("pause container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) UnpauseContainer(_ context.Context, id string) error {
+	resp, err := p.do("POST", fmt.Sprintf("/containers/%s/unpause", id), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("unpause container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) RemoveContainer(_ context.Context, id string, force bool) error {
+	resp, err := p.do("DELETE", fmt.Sprintf("/containers/%s?force=%t", id, force), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("remove container %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) InspectContainer(_ context.Context, id string) (*model.ContainerInspect, error) {
+	var inspect model.ContainerInspect
+	err := p.doJSON("GET", fmt.Sprintf("/containers/%s/json", id), nil, &inspect)
+	return &inspect, err
+}
+
+func (p *SocketPodmanProvider) ExecCreate(_ context.Context, containerID string, cmd []string, tty bool) (string, error) {
+	body := map[string]any{
+		"AttachStdin":  true,
+		"AttachStdout": true,
+		"AttachStderr": true,
+		"Tty":          tty,
+		"Cmd":          cmd,
+	}
+	var result struct {
+		ID string `json:"Id"`
+	}
+	err := p.doJSON("POST", fmt.Sprintf("/containers/%s/exec", containerID), body, &result)
+	return result.ID, err
+}
+
+func (p *SocketPodmanProvider) ExecAttach(_ context.Context, execID string) (net.Conn, error) {
+	url := fmt.Sprintf("http://localhost/%s/libpod/exec/%s/start", p.apiVersion, execID)
+	req, err := http.NewRequest("POST", url, bytes.NewReader([]byte(`{"Detach":false,"Tty":true}`)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	conn, err := net.Dial("unix", p.socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("dial podman socket: %w", err)
+	}
+
+	if err := req.Write(conn); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("write exec request: %w", err)
+	}
+
+	// Read HTTP response headers, then return the raw connection for TTY I/O
+	buf := make([]byte, 4096)
+	total := 0
+	for {
+		n, err := conn.Read(buf[total:])
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("read exec response: %w", err)
+		}
+		total += n
+		if strings.Contains(string(buf[:total]), "\r\n\r\n") {
+			break
+		}
+	}
+
+	return conn, nil
+}
+
+func (p *SocketPodmanProvider) ExecResize(_ context.Context, execID string, height, width uint) error {
+	resp, err := p.do("POST", fmt.Sprintf("/exec/%s/resize?h=%d&w=%d", execID, height, width), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 func (p *SocketPodmanProvider) ListImages(_ context.Context) ([]model.ImageInfo, error) {
-	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/images/json")
-	if err != nil {
-		return nil, fmt.Errorf("list images: %w", err)
-	}
-	defer resp.Body.Close()
-
 	var images []model.ImageInfo
-	if err := json.NewDecoder(resp.Body).Decode(&images); err != nil {
-		return nil, fmt.Errorf("decode images: %w", err)
+	err := p.doJSON("GET", "/images/json", nil, &images)
+	return images, err
+}
+
+func (p *SocketPodmanProvider) PullImage(_ context.Context, name string) (io.ReadCloser, error) {
+	resp, err := p.do("POST", fmt.Sprintf("/images/pull?reference=%s", name), nil)
+	if err != nil {
+		return nil, err
 	}
-	return images, nil
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("pull image %s: %s", name, string(msg))
+	}
+	return resp.Body, nil
+}
+
+func (p *SocketPodmanProvider) RemoveImage(_ context.Context, id string, force bool) error {
+	resp, err := p.do("DELETE", fmt.Sprintf("/images/%s?force=%t", id, force), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("remove image %s: status %d", id, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) InspectImage(_ context.Context, id string) (map[string]any, error) {
+	var result map[string]any
+	err := p.doJSON("GET", fmt.Sprintf("/images/%s/json", id), nil, &result)
+	return result, err
 }
 
 func (p *SocketPodmanProvider) ListVolumes(_ context.Context) ([]model.VolumeInfo, error) {
-	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/volumes/json")
-	if err != nil {
-		return nil, fmt.Errorf("list volumes: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var result struct {
+	var resp struct {
 		Volumes []model.VolumeInfo `json:"Volumes"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode volumes: %w", err)
+	err := p.doJSON("GET", "/volumes/json", nil, &resp)
+	return resp.Volumes, err
+}
+
+func (p *SocketPodmanProvider) CreateVolume(_ context.Context, name string, labels map[string]string) (*model.VolumeInfo, error) {
+	body := map[string]any{"Name": name}
+	if len(labels) > 0 {
+		body["Labels"] = labels
 	}
-	return result.Volumes, nil
+	var vol model.VolumeInfo
+	err := p.doJSON("POST", "/volumes/create", body, &vol)
+	return &vol, err
+}
+
+func (p *SocketPodmanProvider) RemoveVolume(_ context.Context, name string, force bool) error {
+	resp, err := p.do("DELETE", fmt.Sprintf("/volumes/%s?force=%t", name, force), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("remove volume %s: status %d", name, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) InspectVolume(_ context.Context, name string) (map[string]any, error) {
+	var result map[string]any
+	err := p.doJSON("GET", fmt.Sprintf("/volumes/%s/json", name), nil, &result)
+	return result, err
 }
 
 func (p *SocketPodmanProvider) ListNetworks(_ context.Context) ([]model.NetworkInfo, error) {
-	resp, err := p.client.Get("http://localhost/v5.0.0/libpod/networks/json")
-	if err != nil {
-		return nil, fmt.Errorf("list networks: %w", err)
-	}
-	defer resp.Body.Close()
-
 	var networks []model.NetworkInfo
-	if err := json.NewDecoder(resp.Body).Decode(&networks); err != nil {
-		return nil, fmt.Errorf("decode networks: %w", err)
-	}
-	return networks, nil
+	err := p.doJSON("GET", "/networks/json", nil, &networks)
+	return networks, err
 }
 
-// Ensure SocketPodmanProvider satisfies the interface at compile time.
+func (p *SocketPodmanProvider) CreateNetwork(_ context.Context, name, driver string, subnet string) error {
+	body := map[string]any{"Name": name}
+	if driver != "" {
+		body["Driver"] = driver
+	}
+	if subnet != "" {
+		body["Subnets"] = []map[string]string{{"Subnet": subnet}}
+	}
+	resp, err := p.do("POST", "/networks/create", body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("create network %s: %s", name, string(msg))
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) RemoveNetwork(_ context.Context, name string) error {
+	resp, err := p.do("DELETE", fmt.Sprintf("/networks/%s", name), nil)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("remove network %s: status %d", name, resp.StatusCode)
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) InspectNetwork(_ context.Context, name string) (map[string]any, error) {
+	var result map[string]any
+	err := p.doJSON("GET", fmt.Sprintf("/networks/%s/json", name), nil, &result)
+	return result, err
+}
+
 var _ PodmanProvider = (*SocketPodmanProvider)(nil)
