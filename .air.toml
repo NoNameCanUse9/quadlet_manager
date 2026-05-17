@@ -1,0 +1,26 @@
+# .air.toml — Hot-reload for Go backend
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./bin/quadlet-manager ./cmd/quadlet-manager"
+  bin = "./bin/quadlet-manager"
+  args_bin = ["--dev", "--port", "9090"]
+  delay = 500
+  exclude_dir = ["tmp", "vendor", "web", "bin", "node_modules"]
+  exclude_regex = ["_test.go"]
+  include_ext = ["go"]
+  kill_delay = "500ms"
+  stop_on_error = true
+
+[color]
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  time = false
+
+[misc]
+  clean_on_exit = true
