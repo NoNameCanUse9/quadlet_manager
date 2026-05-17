@@ -38,3 +38,15 @@ func (s *ContainerService) ListVolumes(ctx context.Context) ([]model.VolumeInfo,
 func (s *ContainerService) ListNetworks(ctx context.Context) ([]model.NetworkInfo, error) {
 	return s.podman.ListNetworks(ctx)
 }
+
+func (s *ContainerService) PauseContainer(ctx context.Context, id string) error {
+	return s.podman.PauseContainer(ctx, id)
+}
+
+func (s *ContainerService) UnpauseContainer(ctx context.Context, id string) error {
+	return s.podman.UnpauseContainer(ctx, id)
+}
+
+func (s *ContainerService) InspectContainer(ctx context.Context, id string) (*model.ContainerInspect, error) {
+	return s.podman.InspectContainer(ctx, id)
+}
