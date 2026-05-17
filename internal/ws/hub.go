@@ -1,10 +1,12 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -115,4 +117,37 @@ func (c *Client) writePump() {
 			break
 		}
 	}
+}
+
+// ClientCount returns the number of connected WebSocket clients.
+func (h *Hub) ClientCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.clients)
+}
+
+// StatsSource is a function that returns current container stats.
+type StatsSource func(ctx context.Context) (interface{}, error)
+
+// StartStatsBroadcaster periodically fetches stats and broadcasts to all clients.
+func (h *Hub) StartStatsBroadcaster(ctx context.Context, interval time.Duration, source StatsSource) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if h.ClientCount() == 0 {
+					continue
+				}
+				stats, err := source(ctx)
+				if err != nil {
+					continue
+				}
+				h.Broadcast(Message{Type: "stats_update", Data: stats})
+			}
+		}
+	}()
 }

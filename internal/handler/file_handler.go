@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/choken/quadlet-manager/internal/service"
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,11 @@ func (h *FileHandler) ReadFile(c *gin.Context) {
 	filename := c.Param("filename")
 	content, err := h.files.ReadFile(c.Request.Context(), filename)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		status := http.StatusBadRequest
+		if strings.Contains(err.Error(), "not found") {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"filename": filename, "content": content})

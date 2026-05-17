@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"flag"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/choken/quadlet-manager/internal/config"
 	"github.com/choken/quadlet-manager/internal/handler"
@@ -47,7 +49,7 @@ func main() {
 	}
 
 	// Initialize providers
-	systemdProvider := provider.NewMockSystemd(cfg.Rootless)
+	systemdProvider := newSystemdProvider(cfg)
 	podmanProvider := provider.NewSocketPodmanProvider(cfg.PodmanSocket)
 	quadletFS := provider.NewQuadletFSImpl(cfg.QuadletDir)
 
@@ -59,6 +61,11 @@ func main() {
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
 	go hub.Run()
+
+	// Start stats broadcaster (every 5 seconds)
+	hub.StartStatsBroadcaster(context.Background(), 5*time.Second, func(ctx context.Context) (interface{}, error) {
+		return containerSvc.GetAllStats(ctx)
+	})
 
 	// Initialize handlers
 	systemH := handler.NewSystemHandler(cfg, unitSvc)
@@ -135,4 +142,15 @@ func flagWasSet(name string) bool {
 		}
 	})
 	return found
+}
+
+// newSystemdProvider tries the real D-Bus provider, falls back to mock.
+func newSystemdProvider(cfg config.Config) provider.SystemdProvider {
+	dbus := provider.NewDBusSystemdProvider(cfg.Rootless)
+	if err := dbus.Connect(context.Background()); err != nil {
+		log.Printf("D-Bus unavailable (%v), using mock systemd provider", err)
+		return provider.NewMockSystemd(cfg.Rootless)
+	}
+	log.Printf("Connected to systemd D-Bus (rootless=%v)", cfg.Rootless)
+	return dbus
 }
