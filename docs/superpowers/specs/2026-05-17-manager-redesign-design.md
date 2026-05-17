@@ -203,7 +203,33 @@ func (o *ContainerOrchestrator) Start(ctx context.Context, containerID string) e
 // Same pattern for Stop, Restart, Remove
 ```
 
-### 3.4 Web Terminal (Exec)
+### 3.4 D-Bus Concurrency & Timeout
+
+D-Bus calls can hang under high system I/O load. To prevent a stuck unit from blocking the entire Gin backend:
+
+```go
+const defaultDBusTimeout = 5 * time.Second
+
+func (p *DBusSystemdProvider) withTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+    if _, ok := ctx.Deadline(); ok {
+        return ctx, func() {} // caller already set a deadline
+    }
+    return context.WithTimeout(ctx, defaultDBusTimeout)
+}
+
+func (p *DBusSystemdProvider) StartUnit(ctx context.Context, name string) error {
+    ctx, cancel := p.withTimeout(ctx)
+    defer cancel()
+    // ... D-Bus call with ctx
+}
+```
+
+Every `SystemdProvider` method must:
+1. Accept and propagate `context.Context`
+2. Apply a default 5s timeout if no deadline is set
+3. Return `context.DeadlineExceeded` error on timeout, which the handler maps to HTTP 504
+
+### 3.5 Web Terminal (Exec)
 
 ```go
 // exec_handler.go
@@ -266,7 +292,7 @@ func (h *ExecHandler) ExecWebSocket(c *gin.Context) {
 
 **Resize protocol:** Frontend sends JSON text frames `{"type":"resize","cols":80,"rows":24}` over the same WebSocket. Backend distinguishes resize messages from terminal input by checking if the message is valid JSON with a `"type":"resize"` field. Terminal input is always raw binary frames. Backend calls `ExecResize(ctx, execID, height, width)` on Podman.
 
-### 3.5 Backup Service
+### 3.6 Backup Service
 
 ```go
 type BackupService struct {
@@ -291,7 +317,42 @@ backup.tar.gz
 └── settings.json    # language, quadlet_dir, podman_socket (no auth data)
 ```
 
-### 3.6 Alert System
+### 3.7 Image Pull Streaming
+
+`PullImage` in the Podman API returns a streaming response (JSON lines with pull progress). A plain REST request would block for minutes with no feedback.
+
+**Approach:** Use WebSocket for pull progress:
+
+```
+POST /api/v1/images/pull  →  returns { "task_id": "abc123" }
+WS  /api/v1/images/pull/:task_id/ws  →  streams progress events
+```
+
+```go
+// image_handler.go
+func (h *ImageHandler) PullImage(c *gin.Context) {
+    var req struct {
+        Name string `json:"name"`
+    }
+    c.BindJSON(&req)
+
+    taskID := uuid.New().String()
+    go h.streamPull(c.Request.Context(), taskID, req.Name)
+
+    c.JSON(200, gin.H{"task_id": taskID})
+}
+
+func (h *ImageHandler) streamPull(ctx context.Context, taskID, name string) {
+    // Podman returns streaming JSON lines
+    // Parse each line and broadcast via WebSocket hub
+    // Events: { "type": "pull_progress", "task_id": "...", "status": "...", "progress": "45%" }
+    hub.Broadcast(Message{Type: "pull_progress", Data: progress})
+}
+```
+
+Frontend: after POST `/images/pull`, open WebSocket to receive real-time progress, show a progress bar in the Pull dialog.
+
+### 3.8 Alert System
 
 Extend WebSocket hub with a `unit_failed` event type:
 
@@ -309,7 +370,7 @@ hub.Broadcast(Message{
 })
 ```
 
-### 3.7 API Routes (new/changed)
+### 3.9 API Routes (new/changed)
 
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
@@ -323,7 +384,8 @@ hub.Broadcast(Message{
 | GET | `/api/v1/containers/:id/logs` | ContainerHandler | Container logs (existing) |
 | POST | `/api/v1/containers/:id/exec` | ExecHandler | Create exec session |
 | GET | `/api/v1/containers/:id/exec/:exec_id/ws` | ExecHandler | WebSocket exec attach |
-| POST | `/api/v1/images/pull` | ImageHandler | Pull image |
+| POST | `/api/v1/images/pull` | ImageHandler | Pull image (returns task_id) |
+| GET | `/api/v1/images/pull/:task_id/ws` | ImageHandler | Pull progress stream (WebSocket) |
 | DELETE | `/api/v1/images/:id` | ImageHandler | Remove image |
 | GET | `/api/v1/images/:id/inspect` | ImageHandler | Image details |
 | POST | `/api/v1/volumes` | VolumeHandler | Create volume |
@@ -428,6 +490,18 @@ Remove: direct `useState`-based data fetching in ImagesPage, VolumesPage, Networ
 ## 5. Database Schema
 
 Existing tables preserved. No schema changes needed — `users`, `user_settings`, `audit_logs` are sufficient.
+
+**SQLite WAL Mode:** Enable WAL mode on connection open to prevent `database is locked` under concurrent writes (audit logs + settings updates):
+
+```go
+func NewDB(path string) (*DB, error) {
+    db, err := sqlx.Open("sqlite3", path+"?_journal_mode=WAL&_busy_timeout=5000")
+    // ...
+}
+```
+
+- `_journal_mode=WAL` — allows concurrent readers + one writer
+- `_busy_timeout=5000` — wait up to 5s for lock instead of failing immediately
 
 ---
 
