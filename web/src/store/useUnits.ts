@@ -22,7 +22,7 @@ export const useUnits = create<UnitsState>((set, get) => ({
   fetchUnits: async () => {
     set({ loading: true, error: null })
     try {
-      const units = await api.listUnits()
+      const units = (await api.listUnits()) ?? []
       set({ units, loading: false })
     } catch (e) {
       set({ error: (e as Error).message, loading: false })

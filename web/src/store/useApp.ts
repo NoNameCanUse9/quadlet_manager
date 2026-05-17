@@ -29,7 +29,7 @@ export const useApp = create<AppState>((set) => ({
   fetchFiles: async () => {
     set({ loading: true })
     try {
-      const files = await api.listFiles()
+      const files = (await api.listFiles()) ?? []
       set({ files, loading: false })
     } catch {
       set({ loading: false })

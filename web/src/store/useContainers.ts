@@ -19,7 +19,7 @@ export const useContainers = create<ContainersState>((set) => ({
   fetchContainers: async () => {
     set({ loading: true, error: null })
     try {
-      const containers = await api.listContainers()
+      const containers = (await api.listContainers()) ?? []
       set({ containers, loading: false })
     } catch (e) {
       set({ error: (e as Error).message, loading: false })
@@ -29,7 +29,7 @@ export const useContainers = create<ContainersState>((set) => ({
   fetchStats: async () => {
     try {
       const data = await api.getStats()
-      set({ stats: data.containers })
+      set({ stats: data?.containers ?? [] })
     } catch {
       // stats are non-critical
     }

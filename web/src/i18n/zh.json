@@ -116,6 +116,7 @@
     "language": "语言",
     "rootless": "Rootless 模式",
     "quadletDir": "Quadlet 目录",
-    "podmanSocket": "Podman Socket"
+    "podmanSocket": "Podman Socket",
+    "save": "保存"
   }
 }

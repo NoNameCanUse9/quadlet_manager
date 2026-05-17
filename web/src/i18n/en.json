@@ -116,6 +116,7 @@
     "language": "Language",
     "rootless": "Rootless Mode",
     "quadletDir": "Quadlet Directory",
-    "podmanSocket": "Podman Socket"
+    "podmanSocket": "Podman Socket",
+    "save": "Save"
   }
 }

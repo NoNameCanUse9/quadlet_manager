@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/store/useAuth'
 import { Languages } from 'lucide-react'
-import i18n from '@/i18n'
 
 export function InitPage() {
+  const { i18n } = useTranslation()
   const navigate = useNavigate()
   const { initAdmin, loading, error } = useAuth()
   const [username, setUsername] = useState('')
@@ -31,10 +32,10 @@ export function InitPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <form onSubmit={handleSubmit} className="w-80 space-y-4">
         <div className="text-center space-y-2">
-          <h1 className="text-sm font-bold tracking-widest text-accent uppercase">
+          <h1 className="text-xl font-bold tracking-widest text-accent uppercase">
             Quadlet Manager
           </h1>
-          <p className="text-xs text-text-muted">
+          <p className="text-sm text-text-muted">
             {isZh ? '创建管理员账号' : 'Create your admin account'}
           </p>
           <button
