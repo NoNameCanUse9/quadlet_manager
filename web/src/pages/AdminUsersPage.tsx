@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/store/useAuth'
 import { Trash2, UserPlus } from 'lucide-react'
 
@@ -10,6 +11,7 @@ interface User {
 }
 
 export function AdminUsersPage() {
+  const { t } = useTranslation()
   const currentUser = useAuth((s) => s.user)
   const token = useAuth((s) => s.token)
   const [users, setUsers] = useState<User[]>([])
@@ -51,7 +53,7 @@ export function AdminUsersPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this user?')) return
+    if (!confirm(t('users.deleteConfirm') || 'Delete this user?')) return
     try {
       await fetch(`/api/v1/auth/users/${id}`, {
         method: 'DELETE',
@@ -64,13 +66,13 @@ export function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">Users</h2>
+        <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">{t('users.title')}</h2>
         <button
           onClick={() => setShowAdd(!showAdd)}
           className="flex items-center gap-1 px-2 py-1 text-[10px] text-accent hover:bg-accent-dim rounded transition-colors"
         >
           <UserPlus size={12} />
-          Add User
+          {t('users.addUser')}
         </button>
       </div>
 
@@ -80,14 +82,14 @@ export function AdminUsersPage() {
             type="text"
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-            placeholder="Username"
+            placeholder={t('users.username') || 'Username'}
             className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
           />
           <input
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            placeholder="Password"
+            placeholder={t('users.password') || 'Password'}
             className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
           />
           <div className="flex items-center gap-2">
@@ -96,14 +98,14 @@ export function AdminUsersPage() {
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               className="bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
             >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
+              <option value="user">{t('users.roleUser')}</option>
+              <option value="admin">{t('users.roleAdmin')}</option>
             </select>
             <button
               onClick={handleAdd}
               className="px-3 py-1.5 bg-accent text-background rounded text-xs hover:bg-accent/90 transition-colors"
             >
-              Create
+              {t('common.create')}
             </button>
           </div>
         </div>
@@ -111,15 +113,15 @@ export function AdminUsersPage() {
 
       <div className="border border-border rounded bg-surface overflow-hidden">
         {loading ? (
-          <div className="p-4 text-xs text-text-muted">Loading...</div>
+          <div className="p-4 text-xs text-text-muted">{t('common.loading')}</div>
         ) : (
           <table className="w-full text-xs">
             <thead>
               <tr className="text-text-muted text-left border-b border-border bg-surface-raised">
-                <th className="px-3 py-2 font-medium">Username</th>
-                <th className="px-3 py-2 font-medium">Role</th>
-                <th className="px-3 py-2 font-medium">Created</th>
-                <th className="px-3 py-2 font-medium text-right">Actions</th>
+                <th className="px-3 py-2 font-medium">{t('users.username')}</th>
+                <th className="px-3 py-2 font-medium">{t('users.role')}</th>
+                <th className="px-3 py-2 font-medium">{t('users.created')}</th>
+                <th className="px-3 py-2 font-medium text-right">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -137,7 +139,7 @@ export function AdminUsersPage() {
                           : 'bg-surface-raised text-text-muted'
                       }`}
                     >
-                      {u.role}
+                      {u.role === 'admin' ? t('users.roleAdmin') : t('users.roleUser')}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-text-muted">

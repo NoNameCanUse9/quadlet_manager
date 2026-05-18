@@ -12,7 +12,8 @@ export function NetworksPage() {
   const [newSubnet, setNewSubnet] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const { data: networks = [], isLoading, error, refetch } = useNetworks()
+  const { data: networksData, isLoading, error, refetch } = useNetworks()
+  const networks = networksData ?? []
   const createMut = useCreateNetwork()
   const removeMut = useRemoveNetwork()
 
@@ -53,7 +54,7 @@ export function NetworksPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setCreateDialog(true)}
             className="flex items-center gap-1 px-2 py-1 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20">
-            <Plus size={12} /> Create
+            <Plus size={12} /> {t('common.create')}
           </button>
           <button onClick={() => refetch()} className="p-1 text-text-secondary hover:text-text-primary">
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -71,9 +72,9 @@ export function NetworksPage() {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-surface-raised text-text-secondary">
-              <th className="px-3 py-2 text-left font-medium">Name</th>
-              <th className="px-3 py-2 text-left font-medium">ID</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-3 py-2 text-left font-medium">{t('common.name')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('common.id')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -83,7 +84,7 @@ export function NetworksPage() {
                 <td className="px-3 py-2 text-text-muted font-mono text-[10px]">{n.id.slice(0, 12)}</td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => setDeleteTarget(n.name)}
-                    className="p-1 text-text-secondary hover:text-red-400" title="Remove">
+                    className="p-1 text-text-secondary hover:text-red-400" title={t('common.remove') || 'Remove'}>
                     <Trash2 size={12} />
                   </button>
                 </td>
@@ -96,11 +97,11 @@ export function NetworksPage() {
       {createDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-3">Create Network</p>
+            <p className="text-sm text-text-primary mb-3">{t('networks.createTitle')}</p>
             <div className="space-y-2 mb-4">
               <input
                 type="text"
-                placeholder="Network name *"
+                placeholder={t('networks.namePlaceholder') || 'Network name *'}
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary"
@@ -108,14 +109,14 @@ export function NetworksPage() {
               />
               <input
                 type="text"
-                placeholder="Driver (default: bridge)"
+                placeholder={t('networks.driverPlaceholder') || 'Driver (default: bridge)'}
                 value={newDriver}
                 onChange={e => setNewDriver(e.target.value)}
                 className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary"
               />
               <input
                 type="text"
-                placeholder="Subnet (e.g. 10.89.0.0/24)"
+                placeholder={t('networks.subnetPlaceholder') || 'Subnet (e.g. 10.89.0.0/24)'}
                 value={newSubnet}
                 onChange={e => setNewSubnet(e.target.value)}
                 className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary"
@@ -124,11 +125,11 @@ export function NetworksPage() {
             <div className="flex justify-end gap-2">
               <button onClick={() => { setCreateDialog(false); setNewName(''); setNewDriver(''); setNewSubnet('') }}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={handleCreate} disabled={createMut.isPending}
                 className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 disabled:opacity-50">
-                {createMut.isPending ? 'Creating...' : 'Create'}
+                {createMut.isPending ? t('common.loading') : t('common.create')}
               </button>
             </div>
           </div>
@@ -138,15 +139,15 @@ export function NetworksPage() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-4">Remove network "{deleteTarget}"?</p>
+            <p className="text-sm text-text-primary mb-4">{t('networks.removeConfirm', { name: deleteTarget })}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDeleteTarget(null)}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={() => handleRemove(deleteTarget)}
                 className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20">
-                Remove
+                {t('common.remove')}
               </button>
             </div>
           </div>

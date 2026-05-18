@@ -16,7 +16,8 @@ export function ContainersPage() {
   const [stateFilter, setStateFilter] = useState<string>('all')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const { data: containers = [], isLoading, error, refetch } = useContainers()
+  const { data: containersData, isLoading, error, refetch } = useContainers()
+  const containers = containersData ?? []
   const { data: stats } = useContainerStats()
   const startMut = useStartContainer()
   const stopMut = useStopContainer()
@@ -61,7 +62,7 @@ export function ContainersPage() {
         <div className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t('containers.searchPlaceholder') || 'Search...'}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="bg-surface-raised border border-border rounded px-2 py-1 text-xs text-text-primary w-40"
@@ -71,10 +72,10 @@ export function ContainersPage() {
             onChange={e => setStateFilter(e.target.value)}
             className="bg-surface-raised border border-border rounded px-2 py-1 text-xs text-text-primary"
           >
-            <option value="all">All</option>
-            <option value="running">Running</option>
-            <option value="exited">Exited</option>
-            <option value="paused">Paused</option>
+            <option value="all">{t('containers.stateAll')}</option>
+            <option value="running">{t('containers.stateRunning')}</option>
+            <option value="exited">{t('containers.stateExited')}</option>
+            <option value="paused">{t('containers.statePaused')}</option>
           </select>
           <button onClick={() => refetch()} className="p-1 text-text-secondary hover:text-text-primary">
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -92,12 +93,12 @@ export function ContainersPage() {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-surface-raised text-text-secondary">
-              <th className="px-3 py-2 text-left font-medium">Name</th>
-              <th className="px-3 py-2 text-left font-medium">Image</th>
-              <th className="px-3 py-2 text-left font-medium">State</th>
-              <th className="px-3 py-2 text-right font-medium">CPU%</th>
-              <th className="px-3 py-2 text-right font-medium">MEM</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-3 py-2 text-left font-medium">{t('common.name')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('containers.image')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('containers.status')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('containers.cpu')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('containers.mem')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -128,31 +129,31 @@ export function ContainersPage() {
                     <div className="flex items-center justify-end gap-1">
                       {isRunning ? (
                         <>
-                          <button onClick={() => handleAction(() => stopMut.mutateAsync(c.id), 'Stopped')}
-                            className="p-1 text-text-secondary hover:text-red-400" title="Stop">
+                          <button onClick={() => handleAction(() => stopMut.mutateAsync(c.id), t('containers.stopped'))}
+                            className="p-1 text-text-secondary hover:text-red-400" title={t('common.stop') || 'Stop'}>
                             <Square size={12} />
                           </button>
-                          <button onClick={() => handleAction(() => restartMut.mutateAsync(c.id), 'Restarted')}
-                            className="p-1 text-text-secondary hover:text-blue-400" title="Restart">
+                          <button onClick={() => handleAction(() => restartMut.mutateAsync(c.id), t('containers.restarted'))}
+                            className="p-1 text-text-secondary hover:text-blue-400" title={t('common.restart') || 'Restart'}>
                             <RotateCw size={12} />
                           </button>
-                          <button onClick={() => handleAction(() => pauseMut.mutateAsync(c.id), 'Paused')}
-                            className="p-1 text-text-secondary hover:text-yellow-400" title="Pause">
+                          <button onClick={() => handleAction(() => pauseMut.mutateAsync(c.id), t('containers.paused'))}
+                            className="p-1 text-text-secondary hover:text-yellow-400" title={t('common.pause') || 'Pause'}>
                             <Pause size={12} />
                           </button>
                         </>
                       ) : (
-                        <button onClick={() => handleAction(() => startMut.mutateAsync(c.id), 'Started')}
-                          className="p-1 text-text-secondary hover:text-emerald-400" title="Start">
+                        <button onClick={() => handleAction(() => startMut.mutateAsync(c.id), t('containers.started'))}
+                          className="p-1 text-text-secondary hover:text-emerald-400" title={t('common.start') || 'Start'}>
                           <Play size={12} />
                         </button>
                       )}
                       <button onClick={() => handleTerminal(c.id)}
-                        className="p-1 text-text-secondary hover:text-blue-400" title="Terminal">
+                        className="p-1 text-text-secondary hover:text-blue-400" title={t('containers.terminal') || 'Terminal'}>
                         <Terminal size={12} />
                       </button>
                       <button onClick={() => setDeleteTarget(c.id)}
-                        className="p-1 text-text-secondary hover:text-red-400" title="Remove">
+                        className="p-1 text-text-secondary hover:text-red-400" title={t('common.remove') || 'Remove'}>
                         <Trash2 size={12} />
                       </button>
                     </div>
@@ -167,17 +168,17 @@ export function ContainersPage() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-4">Remove this container?</p>
+            <p className="text-sm text-text-primary mb-4">{t('containers.removeConfirm')}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDeleteTarget(null)}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={() => {
-                handleAction(() => removeMut.mutateAsync({ id: deleteTarget, force: true }), 'Removed')
+                handleAction(() => removeMut.mutateAsync({ id: deleteTarget, force: true }), t('containers.removed'))
                 setDeleteTarget(null)
               }} className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20">
-                Remove
+                {t('common.remove')}
               </button>
             </div>
           </div>

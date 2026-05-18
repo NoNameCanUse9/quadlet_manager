@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ interface ConfigWizardProps {
 }
 
 export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
+  const { t } = useTranslation()
   const data = { ...defaultData, ...value }
 
   const update = useCallback(
@@ -46,7 +48,7 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
   return (
     <div className="space-y-4 text-xs">
       {/* Image */}
-      <Section title="Image">
+      <Section title={t('wizard.image')}>
         <Input
           value={data.image}
           onChange={(v) => update({ image: v })}
@@ -55,7 +57,7 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
       </Section>
 
       {/* Exec */}
-      <Section title="Command">
+      <Section title={t('wizard.command')}>
         <Input
           value={data.exec}
           onChange={(v) => update({ exec: v })}
@@ -64,7 +66,7 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
       </Section>
 
       {/* Ports */}
-      <Section title="PublishPort">
+      <Section title={t('wizard.publishPort')}>
         <MultiInput
           items={data.ports}
           onAdd={(v) => update({ ports: [...data.ports, v] })}
@@ -74,7 +76,7 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
       </Section>
 
       {/* Volumes */}
-      <Section title="Volume">
+      <Section title={t('wizard.volume')}>
         <MultiInput
           items={data.volumes}
           onAdd={(v) => update({ volumes: [...data.volumes, v] })}
@@ -84,7 +86,7 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
       </Section>
 
       {/* Environment */}
-      <Section title="Environment">
+      <Section title={t('wizard.environment')}>
         <MultiInput
           items={data.env}
           onAdd={(v) => update({ env: [...data.env, v] })}
@@ -94,39 +96,39 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
       </Section>
 
       {/* Network / HostName */}
-      <Section title="Network">
+      <Section title={t('wizard.network')}>
         <div className="grid grid-cols-2 gap-2">
           <Input
             value={data.network}
             onChange={(v) => update({ network: v })}
-            placeholder="Network name"
+            placeholder={t('wizard.networkName') || 'Network name'}
           />
           <Input
             value={data.hostName}
             onChange={(v) => update({ hostName: v })}
-            placeholder="Hostname"
+            placeholder={t('wizard.hostname') || 'Hostname'}
           />
         </div>
       </Section>
 
       {/* User / Group */}
-      <Section title="User / Group">
+      <Section title={t('wizard.userGroup')}>
         <div className="grid grid-cols-2 gap-2">
           <Input
             value={data.user}
             onChange={(v) => update({ user: v })}
-            placeholder="UID (e.g. 1000)"
+            placeholder={t('wizard.uid') || 'UID (e.g. 1000)'}
           />
           <Input
             value={data.group}
             onChange={(v) => update({ group: v })}
-            placeholder="GID (e.g. 1000)"
+            placeholder={t('wizard.gid') || 'GID (e.g. 1000)'}
           />
         </div>
       </Section>
 
       {/* Restart Policy */}
-      <Section title="Restart Policy">
+      <Section title={t('wizard.restartPolicy')}>
         <select
           value={data.restartPolicy}
           onChange={(e) => update({ restartPolicy: e.target.value })}

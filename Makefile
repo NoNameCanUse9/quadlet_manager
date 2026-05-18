@@ -34,7 +34,7 @@ dev:
 	@echo "=========================================================="
 	@echo "🚀 Starting Quadlet Manager Dev Environment (Port 9090)"
 	@echo "=========================================================="
-	@trap 'kill 0' SIGINT; ./bin/air & cd web && npm run dev & wait
+	@npx -y concurrently --kill-others --names "backend,frontend" --prefix-colors "blue,magenta" "./bin/air" "npm run --prefix web dev"
 
 # Run all Go tests
 test:

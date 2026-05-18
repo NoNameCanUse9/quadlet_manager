@@ -10,7 +10,8 @@ export function VolumesPage() {
   const [newName, setNewName] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const { data: volumes = [], isLoading, error, refetch } = useVolumes()
+  const { data: volumesData, isLoading, error, refetch } = useVolumes()
+  const volumes = volumesData ?? []
   const createMut = useCreateVolume()
   const removeMut = useRemoveVolume()
 
@@ -45,7 +46,7 @@ export function VolumesPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setCreateDialog(true)}
             className="flex items-center gap-1 px-2 py-1 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20">
-            <Plus size={12} /> Create
+            <Plus size={12} /> {t('common.create')}
           </button>
           <button onClick={() => refetch()} className="p-1 text-text-secondary hover:text-text-primary">
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -63,9 +64,9 @@ export function VolumesPage() {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-surface-raised text-text-secondary">
-              <th className="px-3 py-2 text-left font-medium">Name</th>
-              <th className="px-3 py-2 text-left font-medium">Mount Point</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-3 py-2 text-left font-medium">{t('common.name')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('volumes.mountPoint')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -75,7 +76,7 @@ export function VolumesPage() {
                 <td className="px-3 py-2 text-text-muted font-mono text-[10px]">{v.mountPoint}</td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => setDeleteTarget(v.name)}
-                    className="p-1 text-text-secondary hover:text-red-400" title="Remove">
+                    className="p-1 text-text-secondary hover:text-red-400" title={t('common.remove') || 'Remove'}>
                     <Trash2 size={12} />
                   </button>
                 </td>
@@ -88,10 +89,10 @@ export function VolumesPage() {
       {createDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-3">Create Volume</p>
+            <p className="text-sm text-text-primary mb-3">{t('volumes.createTitle')}</p>
             <input
               type="text"
-              placeholder="Volume name"
+              placeholder={t('volumes.namePlaceholder') || 'Volume name'}
               value={newName}
               onChange={e => setNewName(e.target.value)}
               className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary mb-4"
@@ -100,11 +101,11 @@ export function VolumesPage() {
             <div className="flex justify-end gap-2">
               <button onClick={() => { setCreateDialog(false); setNewName('') }}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={handleCreate} disabled={createMut.isPending}
                 className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 disabled:opacity-50">
-                {createMut.isPending ? 'Creating...' : 'Create'}
+                {createMut.isPending ? t('common.loading') : t('common.create')}
               </button>
             </div>
           </div>
@@ -114,15 +115,15 @@ export function VolumesPage() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-4">Remove volume "{deleteTarget}"?</p>
+            <p className="text-sm text-text-primary mb-4">{t('volumes.removeConfirm', { name: deleteTarget })}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDeleteTarget(null)}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={() => handleRemove(deleteTarget)}
                 className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20">
-                Remove
+                {t('common.remove')}
               </button>
             </div>
           </div>

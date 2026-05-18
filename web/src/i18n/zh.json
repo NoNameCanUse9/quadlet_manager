@@ -48,26 +48,52 @@
     "name": "名称",
     "image": "镜像",
     "status": "状态",
-    "noData": "未找到容器"
+    "noData": "未找到容器",
+    "searchPlaceholder": "搜索...",
+    "stateAll": "全部",
+    "stateRunning": "运行中",
+    "stateExited": "已退出",
+    "statePaused": "已暂停",
+    "terminal": "终端",
+    "removeConfirm": "确认删除此容器吗？",
+    "cpu": "CPU%",
+    "mem": "内存",
+    "started": "已启动",
+    "stopped": "已停止",
+    "restarted": "已重启",
+    "paused": "已暂停",
+    "removed": "已删除"
   },
   "images": {
     "title": "镜像",
     "id": "ID",
     "tags": "标签",
     "size": "大小",
-    "noData": "未找到镜像"
+    "noData": "未找到镜像",
+    "pull": "拉取",
+    "pullTitle": "拉取镜像",
+    "pullPlaceholder": "镜像:标签 (例如 nginx:latest)",
+    "removeConfirm": "确认删除此镜像吗？"
   },
   "volumes": {
     "title": "存储卷",
     "name": "名称",
     "mountPoint": "挂载点",
-    "noData": "未找到存储卷"
+    "noData": "未找到存储卷",
+    "createTitle": "创建存储卷",
+    "namePlaceholder": "存储卷名称",
+    "removeConfirm": "确认删除存储卷 \"{{name}}\" 吗？"
   },
   "networks": {
     "title": "网络",
     "name": "名称",
     "id": "ID",
-    "noData": "未找到网络"
+    "noData": "未找到网络",
+    "createTitle": "创建网络",
+    "namePlaceholder": "网络名称 *",
+    "driverPlaceholder": "驱动 (默认: bridge)",
+    "subnetPlaceholder": "子网 (例如 10.89.0.0/24)",
+    "removeConfirm": "确认删除网络 \"{{name}}\" 吗？"
   },
   "files": {
     "title": "Quadlet 文件",
@@ -109,7 +135,17 @@
     "no": "否",
     "disconnected": "未连接",
     "rootless": "rootless",
-    "rootful": "rootful"
+    "rootful": "rootful",
+    "name": "名称",
+    "id": "ID",
+    "actions": "操作",
+    "create": "创建",
+    "remove": "删除",
+    "stop": "停止",
+    "restart": "重启",
+    "pause": "暂停",
+    "start": "启动",
+    "search": "搜索..."
   },
   "settings": {
     "title": "设置",
@@ -118,5 +154,16 @@
     "quadletDir": "Quadlet 目录",
     "podmanSocket": "Podman Socket",
     "save": "保存"
+  },
+  "users": {
+    "title": "用户管理",
+    "addUser": "添加用户",
+    "username": "用户名",
+    "password": "密码",
+    "role": "角色",
+    "created": "创建时间",
+    "deleteConfirm": "确认删除此用户吗？",
+    "roleUser": "用户",
+    "roleAdmin": "管理员"
   }
 }

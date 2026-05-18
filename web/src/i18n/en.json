@@ -48,26 +48,52 @@
     "name": "Name",
     "image": "Image",
     "status": "Status",
-    "noData": "No containers found"
+    "noData": "No containers found",
+    "searchPlaceholder": "Search...",
+    "stateAll": "All",
+    "stateRunning": "Running",
+    "stateExited": "Exited",
+    "statePaused": "Paused",
+    "terminal": "Terminal",
+    "removeConfirm": "Remove this container?",
+    "cpu": "CPU%",
+    "mem": "MEM",
+    "started": "Started",
+    "stopped": "Stopped",
+    "restarted": "Restarted",
+    "paused": "Paused",
+    "removed": "Removed"
   },
   "images": {
     "title": "Images",
     "id": "ID",
     "tags": "Tags",
     "size": "Size",
-    "noData": "No images found"
+    "noData": "No images found",
+    "pull": "Pull",
+    "pullTitle": "Pull Image",
+    "pullPlaceholder": "image:tag (e.g. nginx:latest)",
+    "removeConfirm": "Remove this image?"
   },
   "volumes": {
     "title": "Volumes",
     "name": "Name",
     "mountPoint": "Mount Point",
-    "noData": "No volumes found"
+    "noData": "No volumes found",
+    "createTitle": "Create Volume",
+    "namePlaceholder": "Volume name",
+    "removeConfirm": "Remove volume \"{{name}}\"?"
   },
   "networks": {
     "title": "Networks",
     "name": "Name",
     "id": "ID",
-    "noData": "No networks found"
+    "noData": "No networks found",
+    "createTitle": "Create Network",
+    "namePlaceholder": "Network name *",
+    "driverPlaceholder": "Driver (default: bridge)",
+    "subnetPlaceholder": "Subnet (e.g. 10.89.0.0/24)",
+    "removeConfirm": "Remove network \"{{name}}\"?"
   },
   "files": {
     "title": "Quadlet Files",
@@ -109,7 +135,17 @@
     "no": "No",
     "disconnected": "disconnected",
     "rootless": "rootless",
-    "rootful": "rootful"
+    "rootful": "rootful",
+    "name": "Name",
+    "id": "ID",
+    "actions": "Actions",
+    "create": "Create",
+    "remove": "Remove",
+    "stop": "Stop",
+    "restart": "Restart",
+    "pause": "Pause",
+    "start": "Start",
+    "search": "Search..."
   },
   "settings": {
     "title": "Settings",
@@ -118,5 +154,16 @@
     "quadletDir": "Quadlet Directory",
     "podmanSocket": "Podman Socket",
     "save": "Save"
+  },
+  "users": {
+    "title": "Users",
+    "addUser": "Add User",
+    "username": "Username",
+    "password": "Password",
+    "role": "Role",
+    "created": "Created",
+    "deleteConfirm": "Delete this user?",
+    "roleUser": "User",
+    "roleAdmin": "Admin"
   }
 }

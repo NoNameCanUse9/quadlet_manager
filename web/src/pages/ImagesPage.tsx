@@ -10,7 +10,8 @@ export function ImagesPage() {
   const [pullName, setPullName] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
-  const { data: images = [], isLoading, error, refetch } = useImages()
+  const { data: imagesData, isLoading, error, refetch } = useImages()
+  const images = imagesData ?? []
   const pullMut = usePullImage()
   const removeMut = useRemoveImage()
 
@@ -45,7 +46,7 @@ export function ImagesPage() {
         <div className="flex items-center gap-2">
           <button onClick={() => setPullDialog(true)}
             className="flex items-center gap-1 px-2 py-1 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20">
-            <Download size={12} /> Pull
+            <Download size={12} /> {t('images.pull')}
           </button>
           <button onClick={() => refetch()} className="p-1 text-text-secondary hover:text-text-primary">
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
@@ -63,10 +64,10 @@ export function ImagesPage() {
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-surface-raised text-text-secondary">
-              <th className="px-3 py-2 text-left font-medium">ID</th>
-              <th className="px-3 py-2 text-left font-medium">Tags</th>
-              <th className="px-3 py-2 text-right font-medium">Size</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-3 py-2 text-left font-medium">{t('common.id')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('images.tags')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('images.size')}</th>
+              <th className="px-3 py-2 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -77,7 +78,7 @@ export function ImagesPage() {
                 <td className="px-3 py-2 text-right text-text-secondary">{formatBytes(img.size)}</td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => setDeleteTarget(img.id)}
-                    className="p-1 text-text-secondary hover:text-red-400" title="Remove">
+                    className="p-1 text-text-secondary hover:text-red-400" title={t('common.remove') || 'Remove'}>
                     <Trash2 size={12} />
                   </button>
                 </td>
@@ -90,10 +91,10 @@ export function ImagesPage() {
       {pullDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-3">Pull Image</p>
+            <p className="text-sm text-text-primary mb-3">{t('images.pullTitle')}</p>
             <input
               type="text"
-              placeholder="image:tag (e.g. nginx:latest)"
+              placeholder={t('images.pullPlaceholder') || 'image:tag (e.g. nginx:latest)'}
               value={pullName}
               onChange={e => setPullName(e.target.value)}
               className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary mb-4"
@@ -102,11 +103,11 @@ export function ImagesPage() {
             <div className="flex justify-end gap-2">
               <button onClick={() => { setPullDialog(false); setPullName('') }}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={handlePull} disabled={pullMut.isPending}
                 className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 disabled:opacity-50">
-                {pullMut.isPending ? 'Pulling...' : 'Pull'}
+                {pullMut.isPending ? t('common.loading') : t('images.pull')}
               </button>
             </div>
           </div>
@@ -116,15 +117,15 @@ export function ImagesPage() {
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
-            <p className="text-sm text-text-primary mb-4">Remove this image?</p>
+            <p className="text-sm text-text-primary mb-4">{t('images.removeConfirm')}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDeleteTarget(null)}
                 className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised">
-                Cancel
+                {t('common.cancel')}
               </button>
               <button onClick={() => handleRemove(deleteTarget)}
                 className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20">
-                Remove
+                {t('common.remove')}
               </button>
             </div>
           </div>
