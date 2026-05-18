@@ -62,7 +62,28 @@
     "stopped": "Stopped",
     "restarted": "Restarted",
     "paused": "Paused",
-    "removed": "Removed"
+    "removed": "Removed",
+    "autostart": "Autostart"
+  },
+  "compose": {
+    "title": "Compose Projects",
+    "import": "Import",
+    "importTitle": "Import Compose File",
+    "namePlaceholder": "Project name",
+    "contentPlaceholder": "Paste docker-compose.yml content...",
+    "up": "Up",
+    "down": "Down",
+    "convert": "Convert",
+    "convertTitle": "Convert to Quadlet",
+    "services": "Services",
+    "noProjects": "No compose projects",
+    "removeConfirm": "Remove compose project \"{{name}}\"?",
+    "converted": "Converted successfully",
+    "imported": "Imported successfully",
+    "started": "Compose project started",
+    "stopped": "Compose project stopped",
+    "removed": "Compose project removed",
+    "warnings": "Warnings"
   },
   "images": {
     "title": "Images",

@@ -62,7 +62,28 @@
     "stopped": "已停止",
     "restarted": "已重启",
     "paused": "已暂停",
-    "removed": "已删除"
+    "removed": "已删除",
+    "autostart": "开机自启"
+  },
+  "compose": {
+    "title": "Compose 项目",
+    "import": "导入",
+    "importTitle": "导入 Compose 文件",
+    "namePlaceholder": "项目名称",
+    "contentPlaceholder": "粘贴 docker-compose.yml 内容...",
+    "up": "启动",
+    "down": "停止",
+    "convert": "转换",
+    "convertTitle": "转换为 Quadlet",
+    "services": "服务",
+    "noProjects": "暂无 Compose 项目",
+    "removeConfirm": "确认删除 Compose 项目 \"{{name}}\" 吗？",
+    "converted": "转换成功",
+    "imported": "导入成功",
+    "started": "Compose 项目已启动",
+    "stopped": "Compose 项目已停止",
+    "removed": "Compose 项目已删除",
+    "warnings": "警告"
   },
   "images": {
     "title": "镜像",

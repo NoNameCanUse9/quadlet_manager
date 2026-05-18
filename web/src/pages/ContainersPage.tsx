@@ -6,6 +6,7 @@ import {
   useContainers, useContainerStats,
   useStartContainer, useStopContainer, useRestartContainer,
   usePauseContainer, useRemoveContainer, useExecCreate,
+  useSetAutostart,
 } from '@/hooks/useContainers'
 import { toast } from 'sonner'
 
@@ -25,6 +26,7 @@ export function ContainersPage() {
   const pauseMut = usePauseContainer()
   const removeMut = useRemoveContainer()
   const execMut = useExecCreate()
+  const setAutostartMut = useSetAutostart()
 
   const statsMap = new Map((stats?.containers || []).map(s => [s.id, s]))
 
@@ -98,6 +100,7 @@ export function ContainersPage() {
               <th className="px-3 py-2 text-left font-medium">{t('containers.status')}</th>
               <th className="px-3 py-2 text-right font-medium">{t('containers.cpu')}</th>
               <th className="px-3 py-2 text-right font-medium">{t('containers.mem')}</th>
+              <th className="px-3 py-2 text-center font-medium">{t('containers.autostart')}</th>
               <th className="px-3 py-2 text-right font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
@@ -124,6 +127,25 @@ export function ContainersPage() {
                   </td>
                   <td className="px-3 py-2 text-right text-text-secondary">
                     {s ? formatBytes(s.memUsage) : '-'}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {c.labels?.['io.containers.systemd.unit'] ? (
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={async (e) => {
+                          try {
+                            await setAutostartMut.mutateAsync({ id: c.id, enabled: e.target.checked })
+                            toast.success(e.target.checked ? t('compose.started') : t('compose.stopped'))
+                          } catch (err: any) {
+                            toast.error(err.message)
+                          }
+                        }}
+                        className="accent-emerald-500 cursor-pointer"
+                      />
+                    ) : (
+                      <span className="text-text-secondary">-</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="flex items-center justify-end gap-1">

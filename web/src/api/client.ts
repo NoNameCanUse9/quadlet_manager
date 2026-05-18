@@ -64,6 +64,9 @@ export const api = {
   removeContainer: (id: string, force = false) =>
     request(`/containers/${id}?force=${force}`, { method: 'DELETE' }),
   inspectContainer: (id: string) => request<ContainerInspect>(`/containers/${id}/inspect`),
+  getAutostart: (id: string) => request<{ enabled: boolean }>(`/containers/${id}/autostart`),
+  setAutostart: (id: string, enabled: boolean) =>
+    request(`/containers/${id}/autostart`, { method: 'POST', body: JSON.stringify({ enabled }) }),
 
   // Exec
   execCreate: (id: string, cmd: string[] = ['/bin/sh']) =>
@@ -92,6 +95,27 @@ export const api = {
   removeNetwork: (name: string) =>
     request(`/networks/${name}`, { method: 'DELETE' }),
   inspectNetwork: (name: string) => request<NetworkInspect>(`/networks/${name}/inspect`),
+
+  // Compose
+  listComposeProjects: () => request<ComposeProject[]>('/compose'),
+  importComposeProject: (name: string, content: string) =>
+    request('/compose/import', { method: 'POST', body: JSON.stringify({ name, content }) }),
+  removeComposeProject: (name: string) =>
+    request(`/compose/${name}`, { method: 'DELETE' }),
+  composeUp: (name: string) =>
+    request(`/compose/${name}/up`, { method: 'POST' }),
+  composeDown: (name: string) =>
+    request(`/compose/${name}/down`, { method: 'POST' }),
+  composePs: (name: string) =>
+    request<ComposeService[]>(`/compose/${name}/ps`),
+  composeLogs: (name: string, service?: string, tail = 100) => {
+    const params = new URLSearchParams()
+    if (service) params.set('service', service)
+    if (tail) params.set('tail', String(tail))
+    return request<string[]>(`/compose/${name}/logs?${params}`)
+  },
+  convertCompose: (name: string) =>
+    request<QuadletConversion[]>(`/compose/${name}/convert`),
 
   // Backup
   exportBackup: () => {
@@ -160,6 +184,7 @@ export interface ContainerInfo {
   image: string
   state: string
   status: string
+  labels?: Record<string, string>
 }
 
 export interface ContainerStats {
@@ -246,4 +271,24 @@ export interface UserSettings {
   auto_refresh_seconds: number
   default_restart_policy: string
   notify_on_failure: boolean
+}
+
+export interface ComposeProject {
+  name: string
+  file: string
+  status: string
+  services: string[]
+}
+
+export interface ComposeService {
+  name: string
+  state: string
+  image: string
+  ports: string
+}
+
+export interface QuadletConversion {
+  filename: string
+  content: string
+  warnings: string[]
 }

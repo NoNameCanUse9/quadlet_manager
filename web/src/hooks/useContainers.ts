@@ -62,3 +62,18 @@ export function useExecCreate() {
     mutationFn: (id: string) => api.execCreate(id),
   })
 }
+
+export function useAutostart(id: string) {
+  return useQuery({
+    queryKey: ['autostart', id],
+    queryFn: () => api.getAutostart(id),
+  })
+}
+
+export function useSetAutostart() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => api.setAutostart(id, enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['autostart'] }),
+  })
+}
