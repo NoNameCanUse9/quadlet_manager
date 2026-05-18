@@ -115,6 +115,24 @@ func (p *DBusSystemdProvider) DisableUnit(ctx context.Context, name string) erro
 	return p.enableDisable(ctx, "DisableUnitFiles", name)
 }
 
+func (p *DBusSystemdProvider) IsUnitEnabled(ctx context.Context, name string) (bool, error) {
+	ctx, cancel := p.withTimeout(ctx)
+	defer cancel()
+	if p.conn == nil {
+		return false, fmt.Errorf("not connected")
+	}
+	obj := p.conn.Object(systemdDest, systemdPath)
+	var result string
+	call := obj.CallWithContext(ctx, systemdDest+".Manager.GetUnitFileState", 0, name)
+	if call.Err != nil {
+		return false, fmt.Errorf("get unit file state for %s: %w", name, call.Err)
+	}
+	if err := call.Store(&result); err != nil {
+		return false, fmt.Errorf("store unit file state for %s: %w", name, err)
+	}
+	return result == "enabled" || result == "static", nil
+}
+
 func (p *DBusSystemdProvider) enableDisable(ctx context.Context, method, name string) error {
 	if p.conn == nil {
 		return fmt.Errorf("not connected")

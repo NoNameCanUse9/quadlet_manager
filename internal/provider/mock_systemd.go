@@ -11,6 +11,7 @@ import (
 type MockSystemd struct {
 	Rootless bool
 	Units    map[string]model.UnitStatus
+	Enabled  map[string]bool
 	Err      error // injected error for all methods
 	Events   chan model.UnitChangeEvent
 }
@@ -19,6 +20,7 @@ func NewMockSystemd(rootless bool) *MockSystemd {
 	return &MockSystemd{
 		Rootless: rootless,
 		Units:    make(map[string]model.UnitStatus),
+		Enabled:  make(map[string]bool),
 		Events:   make(chan model.UnitChangeEvent, 10),
 	}
 }
@@ -61,8 +63,26 @@ func (m *MockSystemd) RestartUnit(_ context.Context, name string) error {
 	}
 	return nil
 }
-func (m *MockSystemd) EnableUnit(_ context.Context, name string) error  { return m.Err }
-func (m *MockSystemd) DisableUnit(_ context.Context, name string) error { return m.Err }
+func (m *MockSystemd) EnableUnit(_ context.Context, name string) error {
+	if m.Err != nil {
+		return m.Err
+	}
+	m.Enabled[name] = true
+	return nil
+}
+func (m *MockSystemd) DisableUnit(_ context.Context, name string) error {
+	if m.Err != nil {
+		return m.Err
+	}
+	m.Enabled[name] = false
+	return nil
+}
+func (m *MockSystemd) IsUnitEnabled(_ context.Context, name string) (bool, error) {
+	if m.Err != nil {
+		return false, m.Err
+	}
+	return m.Enabled[name], nil
+}
 
 func (m *MockSystemd) ListUnits(_ context.Context) ([]model.UnitStatus, error) {
 	if m.Err != nil {

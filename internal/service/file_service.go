@@ -71,6 +71,8 @@ func (s *FileService) ApplyFile(ctx context.Context, userID int64, filename stri
 		if err := s.systemd.StartUnit(ctx, unitName); err != nil {
 			return fmt.Errorf("start unit %s: %w", unitName, err)
 		}
+		// Auto-enable on boot (best-effort)
+		_ = s.systemd.EnableUnit(ctx, unitName)
 	}
 	return nil
 }

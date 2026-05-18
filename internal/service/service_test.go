@@ -273,3 +273,59 @@ func TestFileService_ReadFile_NotFound(t *testing.T) {
 		t.Fatal("expected error for nonexistent file")
 	}
 }
+
+func TestFileService_ApplyFile_EnablesUnit(t *testing.T) {
+	sd := provider.NewMockSystemd(true)
+	fs := provider.NewMockQuadletFS()
+	svc := NewFileService(fs, sd, nil, "")
+
+	err := svc.ApplyFile(context.Background(), 0, "nginx.container", "[Container]\nImage=nginx\n")
+	if err != nil {
+		t.Fatalf("ApplyFile: %v", err)
+	}
+
+	if !sd.Enabled["nginx.service"] {
+		t.Error("expected nginx.service to be enabled after ApplyFile")
+	}
+}
+
+func TestContainerOrchestrator_Autostart(t *testing.T) {
+	sd := provider.NewMockSystemd(true)
+	podman := provider.NewMockPodman()
+	podman.Containers = []model.ContainerInfo{
+		{
+			ID:     "c1",
+			Names:  []string{"test"},
+			State:  "running",
+			Labels: map[string]string{"io.containers.systemd.unit": "test.service"},
+		},
+	}
+	orch := NewContainerOrchestrator(sd, podman)
+
+	// Initially not enabled
+	enabled, err := orch.GetAutostart(context.Background(), "c1")
+	if err != nil {
+		t.Fatalf("GetAutostart: %v", err)
+	}
+	if enabled {
+		t.Error("expected autostart to be disabled initially")
+	}
+
+	// Enable
+	if err := orch.SetAutostart(context.Background(), "c1", true); err != nil {
+		t.Fatalf("SetAutostart: %v", err)
+	}
+	enabled, _ = orch.GetAutostart(context.Background(), "c1")
+	if !enabled {
+		t.Error("expected autostart to be enabled after SetAutostart(true)")
+	}
+
+	// Disable
+	if err := orch.SetAutostart(context.Background(), "c1", false); err != nil {
+		t.Fatalf("SetAutostart: %v", err)
+	}
+	enabled, _ = orch.GetAutostart(context.Background(), "c1")
+	if enabled {
+		t.Error("expected autostart to be disabled after SetAutostart(false)")
+	}
+}

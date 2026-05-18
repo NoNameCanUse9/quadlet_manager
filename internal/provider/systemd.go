@@ -18,6 +18,7 @@ type SystemdProvider interface {
 	RestartUnit(ctx context.Context, name string) error
 	EnableUnit(ctx context.Context, name string) error
 	DisableUnit(ctx context.Context, name string) error
+	IsUnitEnabled(ctx context.Context, name string) (bool, error)
 
 	ListUnits(ctx context.Context) ([]model.UnitStatus, error)
 	GetUnitStatus(ctx context.Context, name string) (*model.UnitStatus, error)

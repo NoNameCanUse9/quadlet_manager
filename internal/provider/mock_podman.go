@@ -139,10 +139,14 @@ func (m *MockPodman) InspectContainer(_ context.Context, id string) (*model.Cont
 			if len(c.Names) > 0 {
 				name = c.Names[0]
 			}
+			labels := c.Labels
+			if labels == nil {
+				labels = map[string]string{}
+			}
 			return &model.ContainerInspect{
 				ID:     c.ID,
 				Name:   name,
-				Labels: map[string]string{},
+				Labels: labels,
 				State:  &model.ContainerState{Status: c.State},
 				Config: &model.ContainerConfig{Image: c.Image},
 			}, nil

@@ -83,3 +83,30 @@ func (o *ContainerOrchestrator) Remove(ctx context.Context, containerID string, 
 	}
 	return o.podman.RemoveContainer(ctx, containerID, force)
 }
+
+// GetAutostart checks if a Quadlet-managed container is enabled for auto-start on boot.
+func (o *ContainerOrchestrator) GetAutostart(ctx context.Context, containerID string) (bool, error) {
+	managed, unitName, err := o.IsManaged(ctx, containerID)
+	if err != nil {
+		return false, err
+	}
+	if !managed {
+		return false, fmt.Errorf("container is not Quadlet-managed")
+	}
+	return o.systemd.IsUnitEnabled(ctx, unitName)
+}
+
+// SetAutostart enables or disables auto-start on boot for a Quadlet-managed container.
+func (o *ContainerOrchestrator) SetAutostart(ctx context.Context, containerID string, enabled bool) error {
+	managed, unitName, err := o.IsManaged(ctx, containerID)
+	if err != nil {
+		return err
+	}
+	if !managed {
+		return fmt.Errorf("container is not Quadlet-managed")
+	}
+	if enabled {
+		return o.systemd.EnableUnit(ctx, unitName)
+	}
+	return o.systemd.DisableUnit(ctx, unitName)
+}

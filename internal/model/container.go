@@ -1,11 +1,12 @@
 package model
 
 type ContainerInfo struct {
-	ID     string   `json:"id"`
-	Names  []string `json:"names"`
-	Image  string   `json:"image"`
-	State  string   `json:"state"`
-	Status string   `json:"status"`
+	ID     string            `json:"id"`
+	Names  []string          `json:"names"`
+	Image  string            `json:"image"`
+	State  string            `json:"state"`
+	Status string            `json:"status"`
+	Labels map[string]string `json:"labels"`
 }
 
 type ContainerStats struct {

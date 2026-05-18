@@ -214,6 +214,8 @@ func main() {
 		protected.POST("/containers/:id/unpause", containerH.UnpauseContainer)
 		protected.DELETE("/containers/:id", containerH.RemoveContainer)
 		protected.GET("/containers/:id/inspect", containerH.InspectContainer)
+		protected.GET("/containers/:id/autostart", containerH.GetAutostart)
+		protected.POST("/containers/:id/autostart", containerH.SetAutostart)
 
 		// Exec
 		protected.POST("/containers/:id/exec", execH.ExecCreate)

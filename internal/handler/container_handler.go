@@ -99,3 +99,29 @@ func (h *ContainerHandler) InspectContainer(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, info)
 }
+
+func (h *ContainerHandler) GetAutostart(c *gin.Context) {
+	id := c.Param("id")
+	enabled, err := h.orchestrator.GetAutostart(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"enabled": enabled})
+}
+
+func (h *ContainerHandler) SetAutostart(c *gin.Context) {
+	id := c.Param("id")
+	var req struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.orchestrator.SetAutostart(c.Request.Context(), id, req.Enabled); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "updated", "enabled": req.Enabled})
+}
