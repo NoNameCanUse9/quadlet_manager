@@ -21,8 +21,10 @@
 ### 1.1 核心功能
 
 - **Quadlet 文件管理**: 创建/编辑/删除 `.container`, `.volume`, `.network`, `.pod`, `.kube`, `.image` 文件
-- **Systemd 单元控制**: 通过 D-Bus 启动/停止/重启/启用/禁用 systemd 服务
+- **Systemd 单元控制**: 通过 D-Bus 启动/停止/重启/启用/禁用 systemd 服务，ApplyFile 自动启用开机自启
 - **容器管理**: 通过 Podman Socket API 管理容器生命周期、查看日志、Web 终端
+- **Docker Compose 兼容**: 导入 docker-compose.yml，通过 podman compose 管理，支持转换为 Quadlet 文件
+- **开机自启管理**: 容器页面支持 Quadlet 管理容器的开机自启开关
 - **资源管理**: 镜像拉取/删除、存储卷/网络 CRUD
 - **用户认证**: JWT 认证，admin/user 角色，用户级资源隔离
 - **实时推送**: WebSocket 推送容器统计和单元状态变更
@@ -31,7 +33,7 @@
 
 | 层级 | 技术 |
 |------|------|
-| 后端 | Go 1.22+, Gin, godbus/dbus, gorilla/websocket |
+| 后端 | Go 1.22+, Gin, godbus/dbus, gorilla/websocket, gopkg.in/yaml.v3 |
 | 前端 | React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui |
 | 状态管理 | Zustand (前端), SQLite (后端) |
 | 数据库 | SQLite3 + golang-migrate |
@@ -109,6 +111,7 @@ internal/
 | `quadlet.go` | Quadlet 文件模型。 | `QuadletFile` (Name/Path/Content/ModTime/Type) | service, handler, provider |
 | `stats.go` | 统计聚合模型。 | `SystemStats` (Containers []ContainerStats) | handler, ws |
 | `user.go` | 用户和设置模型。 | `User` (ID/Username/Role/CreatedAt), `UserSettings` (9 个字段) | auth, store, handler |
+| `compose.go` | Compose 项目模型。 | `ComposeProject` (Name/File/Status/Services), `ComposeService` (Name/State/Image/Ports), `QuadletConversion` (Filename/Content/Warnings) | provider, handler |
 
 **注意**: model 包是纯数据定义，不包含业务逻辑。所有层都可以导入 model。
 
@@ -127,7 +130,10 @@ internal/
 | `mock_systemd.go` | **SystemdProvider Mock**。内存中模拟 Units map，可控返回错误。用于测试。 | `MockSystemd`, `NewMockSystemd()` | 测试文件 |
 | `mock_podman.go` | **PodmanProvider Mock**。内存中模拟容器/镜像列表。 | `MockPodman`, `NewMockPodman()` | 测试文件 |
 | `mock_quadletfs.go` | **QuadletFS Mock**。内存中模拟 Files map。 | `MockQuadletFS`, `NewMockQuadletFS()` | 测试文件 |
-| `*_test.go` | 接口合规性测试 + 文件名验证测试 + FS CRUD 测试。 | - | - |
+| `compose.go` | **ComposeProvider 接口定义**。声明 ImportProject/ListProjects/RemoveProject/Up/Down/Ps/Logs/ConvertToQuadlet。 | `ComposeProvider` 接口 | handler/compose_handler.go |
+| `compose_impl.go` | **Compose 实现**。通过 `os/exec` 调用 `podman compose`。项目存储在 `{quadletDir}/.compose/{name}/docker-compose.yml`。ConvertToQuadlet 将 docker-compose.yml 字段映射为 Quadlet INI 格式。支持 YAML 解析环境变量（map/list 格式）。 | `ComposeProviderImpl`, `NewComposeProviderImpl()` | main.go |
+| `mock_compose.go` | **ComposeProvider Mock**。内存中模拟项目列表。 | `MockCompose`, `NewMockCompose()` | 测试文件 |
+| `*_test.go` | 接口合规性测试 + 文件名验证测试 + FS CRUD 测试 + Compose 转换测试。 | - | - |
 
 **设计原则**: 所有 provider 接口都有 Mock 实现，service 层只依赖接口不依赖实现，测试时注入 Mock。
 
@@ -138,7 +144,7 @@ internal/
 | `unit_service.go` | **单元生命周期管理**。`ListUnits` 扫描 Quadlet 文件→映射为 systemd 单元名→过滤 D-Bus 返回的单元列表。`StartUnit` 先 DaemonReload 再启动。支持用户级目录隔离（`resolveFS`）。 | `ListUnits(ctx, userID)`, `StartUnit()`, `StopUnit()`, `RestartUnit()`, `EnableUnit()`, `DisableUnit()`, `DaemonReload()` | handler/unit_handler.go |
 | `file_service.go` | **Quadlet 文件 CRUD**。`ApplyFile` 是核心：写入文件→DaemonReload→StartUnit。`ValidateContent` 解析 INI 并检查 Image 是否存在。定义 `SettingsLookup` 接口用于用户目录解析。 | `ListFiles()`, `ReadFile()`, `WriteFile()`, `DeleteFile()`, `ApplyFile()`, `ValidateContent()` | handler/file_handler.go |
 | `container_service.go` | **容器操作封装**。直接代理到 PodmanProvider。 | `ListContainers()`, `GetContainerLogs()`, `PauseContainer()`, `InspectContainer()` | handler/container_handler.go |
-| `orchestrator.go` | **容器编排器**。协调 systemd 和 podman：判断容器是否由 Quadlet 管理（`IsManaged`），如果是则通过 systemd 控制，否则直接操作 podman。 | `Start()`, `Stop()`, `Restart()`, `Remove()`, `IsManaged()` | handler/container_handler.go |
+| `orchestrator.go` | **容器编排器**。协调 systemd 和 podman：判断容器是否由 Quadlet 管理（`IsManaged`），如果是则通过 systemd 控制，否则直接操作 podman。支持开机自启查询/设置（`GetAutostart`/`SetAutostart`）。 | `Start()`, `Stop()`, `Restart()`, `Remove()`, `IsManaged()`, `GetAutostart()`, `SetAutostart()` | handler/container_handler.go |
 | `image_service.go` | **镜像操作封装**。代理到 PodmanProvider。 | `ListImages()`, `PullImage()`, `RemoveImage()`, `InspectImage()` | handler/image_handler.go |
 | `volume_service.go` | **存储卷操作封装**。 | `ListVolumes()`, `CreateVolume()`, `RemoveVolume()`, `InspectVolume()` | handler/volume_handler.go |
 | `network_service.go` | **网络操作封装**。 | `ListNetworks()`, `CreateNetwork()`, `RemoveNetwork()`, `InspectNetwork()` | handler/network_handler.go |
@@ -155,8 +161,9 @@ internal/
 | `auth_handler.go` | 认证处理。`CheckInit` 检查是否有管理员，`InitAdmin` 首次创建管理员，`Login` 登录返回 JWT，`Me` 返回当前用户，`Register`/`ListUsers`/`DeleteUser`/`UpdateUser` 管理用户。 | /api/v1/auth/* | 部分公开 |
 | `unit_handler.go` | 单元操作。从 context 提取 userID 传给 service。 | /api/v1/units/*, /api/v1/daemon/reload | JWT |
 | `file_handler.go` | 文件操作。所有方法提取 userID 用于用户级目录解析。 | /api/v1/files/* | JWT |
-| `container_handler.go` | 容器操作。生命周期控制通过 orchestrator，信息查询通过 containerService。 | /api/v1/containers/* | JWT |
+| `container_handler.go` | 容器操作。生命周期控制通过 orchestrator，信息查询通过 containerService。包含 `GetAutostart`/`SetAutostart` 开机自启管理。 | /api/v1/containers/*, /api/v1/containers/:id/autostart | JWT |
 | `exec_handler.go` | **Web 终端**。`ExecCreate` 创建 exec 会话返回 exec_id，`ExecWebSocket` 升级 WS 连接并双向桥接 Podman exec attach。JWT 认证通过 query param。 | /api/v1/containers/:id/exec, .../ws | JWT |
+| `compose_handler.go` | **Compose 项目管理**。通过 ComposeProvider 管理 docker-compose 项目：导入/列表/删除/启动/停止/日志/转换为 Quadlet。 | /api/v1/compose/* | JWT |
 | `image_handler.go` | 镜像操作。 | /api/v1/images/* | JWT |
 | `volume_handler.go` | 存储卷操作。 | /api/v1/volumes/* | JWT |
 | `network_handler.go` | 网络操作。 | /api/v1/networks/* | JWT |
@@ -250,7 +257,8 @@ web/
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
 | `useUnits.ts` | 单元查询/变更 hooks。`useUnits()` 获取列表，`useStartUnit()` 等 mutation hooks。 | UnitsPage |
-| `useContainers.ts` | 容器查询 hooks。 | ContainersPage |
+| `useContainers.ts` | 容器查询 hooks。包含 `useSetAutostart()` 开机自启 mutation。 | ContainersPage |
+| `useCompose.ts` | Compose 项目 hooks。`useComposeProjects()` 获取列表，`useComposeUp/Down()` 启停，`useConvertCompose()` 转换。 | ContainersPage |
 | `useImages.ts` | 镜像查询 hooks。 | ImagesPage |
 | `useVolumes.ts` | 存储卷查询 hooks。 | VolumesPage |
 | `useNetworks.ts` | 网络查询 hooks。 | NetworksPage |
@@ -264,7 +272,7 @@ web/
 | `LoginPage.tsx` | **登录页面**。用户名/密码表单，登录成功后跳转主页。 | /login | useAuth |
 | `DashboardPage.tsx` | **仪表盘**。显示容器统计卡片、单元状态概览。使用 WebSocket 接收实时更新。 | / (index) | useContainers, useWebSocket |
 | `UnitsPage.tsx` | **单元管理页面**。列出 Quadlet 管理的 systemd 单元，支持启动/停止/重启/启用/禁用操作。 | /units | useUnits hooks |
-| `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端。 | /containers | useContainers hooks |
+| `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端、开机自启开关。顶部集成 Compose 项目管理（导入/启停/转换/删除）。 | /containers | useContainers, useCompose hooks |
 | `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除。 | /images | useImages hooks |
 | `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除。 | /volumes | useVolumes hooks |
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
@@ -284,6 +292,9 @@ web/
 | `editor/QuadletEditor.tsx` | **CodeMirror 6 编辑器封装**。自定义 Quadlet INI 语法高亮、暗色主题。 | FilesPage |
 | `editor/ViewToggle.tsx` | **编辑器/表单模式切换**。 | FilesPage |
 | `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment 等字段的表单编辑，双向同步编辑器内容。 | FilesPage |
+| `compose/ImportComposeDialog.tsx` | **导入 Compose 弹窗**。输入项目名 + 粘贴 docker-compose.yml 内容。 | ContainersPage |
+| `compose/ComposeProjectCard.tsx` | **Compose 项目卡片**。显示项目名/状态/服务列表，支持启动/停止/转换/删除操作。 | ContainersPage |
+| `compose/ConvertPreviewDialog.tsx` | **转换预览弹窗**。显示转换后的 Quadlet 文件内容，支持 Tab 切换多文件、复制、警告提示。 | ContainersPage |
 | `AuthGuard.tsx` | **路由守卫**。未认证时跳转 /login，未初始化时跳转 /init。 | router |
 | `ErrorBoundary.tsx` | **错误边界**。捕获 React 渲染错误，显示降级 UI。 | router |
 | `ui/ErrorBanner.tsx` | 错误提示横幅组件。 | 各页面 |
@@ -344,6 +355,7 @@ web/
 - `SystemdProvider`: D-Bus 操作
 - `PodmanProvider`: Podman Socket API
 - `QuadletFS`: 文件系统操作
+- `ComposeProvider`: Docker Compose 兼容层（podman compose）
 
 ### 3.2 关键接口
 
@@ -558,8 +570,23 @@ CREATE TABLE config (
 | DELETE | `/api/v1/containers/:id` | 删除 |
 | GET | `/api/v1/containers/:id/inspect` | 详细信息 |
 | POST | `/api/v1/containers/:id/exec` | 创建 exec 会话 |
+| GET | `/api/v1/containers/:id/autostart` | 查询开机自启状态 |
+| POST | `/api/v1/containers/:id/autostart` | 设置开机自启 |
 
-### 5.7 镜像/存储卷/网络
+### 5.7 Compose 项目管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/v1/compose` | 列出 Compose 项目 |
+| POST | `/api/v1/compose/import` | 导入 docker-compose.yml |
+| DELETE | `/api/v1/compose/:name` | 删除项目 |
+| POST | `/api/v1/compose/:name/up` | 启动项目 |
+| POST | `/api/v1/compose/:name/down` | 停止项目 |
+| GET | `/api/v1/compose/:name/ps` | 项目服务列表 |
+| GET | `/api/v1/compose/:name/logs` | 项目日志 |
+| GET | `/api/v1/compose/:name/convert` | 转换为 Quadlet 文件 |
+
+### 5.8 镜像/存储卷/网络
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -573,7 +600,7 @@ CREATE TABLE config (
 | POST | `/api/v1/networks` | 创建网络 |
 | DELETE | `/api/v1/networks/:name` | 删除网络 |
 
-### 5.8 其他
+### 5.9 其他
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -829,8 +856,8 @@ WantedBy=default.target
 | config | 5 | 默认值、覆盖、验证 |
 | handler | 31 | 认证、单元、文件、设置、系统信息 |
 | parser | 6 | 解析/生成往返、多值键、空文件 |
-| provider | 13 | 接口定义、文件名验证、FS CRUD |
-| service | 19 | 单元启动/列表、文件 CRUD/验证、编排器 |
+| provider | 24 | 接口定义、文件名验证、FS CRUD、Compose 转换 |
+| service | 21 | 单元启动/列表、文件 CRUD/验证、编排器、ApplyFile 自动启用、开机自启 |
 | store | 11 | 数据库创建、用户 CRUD、设置 CRUD |
 
 ### 10.2 测试模式
