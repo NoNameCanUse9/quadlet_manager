@@ -173,16 +173,16 @@ export function FilesPage() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
+          <h2 className="text-base font-bold tracking-wider text-text-primary uppercase">
             {t('files.title') || 'Quadlet'}
           </h2>
           <div className="flex items-center gap-2">
             {actionLoading && <LoadingSpinner />}
             <button
               onClick={() => setShowCreate(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent text-background rounded hover:bg-accent/90 transition-all font-semibold"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-sm bg-accent text-background rounded hover:bg-accent/90 transition-all font-semibold"
             >
-              <Plus size={14} />
+              <Plus size={16} />
               {t('files.create') || 'Create'}
             </button>
             <button
@@ -190,9 +190,9 @@ export function FilesPage() {
                 await fetchFiles()
                 await fetchUnits()
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-muted hover:text-text-primary border border-border rounded bg-surface hover:bg-surface-raised transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-sm text-text-secondary hover:text-text-primary border border-border rounded bg-surface hover:bg-surface-raised transition-colors font-semibold"
             >
-              <RefreshCw size={12} />
+              <RefreshCw size={14} />
               {t('common.refresh') || 'Refresh'}
             </button>
           </div>
@@ -203,21 +203,21 @@ export function FilesPage() {
         {/* Main List Table */}
         <div className="border border-border rounded bg-surface overflow-hidden">
           {files.length === 0 ? (
-            <div className="p-8 text-center text-xs text-text-muted font-medium">
+            <div className="p-8 text-center text-sm text-text-muted font-medium">
               {t('files.noData') || 'No Quadlet configurations found. Click "Create" to get started!'}
             </div>
           ) : (
-            <table className="w-full text-xs">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="text-text-muted text-left border-b border-border bg-surface-raised font-semibold">
-                  <th className="px-4 py-3 font-medium">{t('files.name') || 'Name'}</th>
-                  <th className="px-4 py-3 font-medium">{t('files.type') || 'Type'}</th>
-                  <th className="px-4 py-3 font-medium">{t('files.status') || 'Status'}</th>
-                  <th className="px-4 py-3 font-medium">{t('files.substate') || 'Systemd Substate'}</th>
-                  <th className="px-4 py-3 font-medium text-right">{t('files.actions') || 'Actions'}</th>
+                <tr className="bg-surface-raised text-text-secondary border-b border-border">
+                  <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('files.name') || 'Name'}</th>
+                  <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('files.type') || 'Type'}</th>
+                  <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('files.status') || 'Status'}</th>
+                  <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('files.substate') || 'Systemd Substate'}</th>
+                  <th className="px-4 py-3 text-right font-semibold text-text-muted text-xs uppercase tracking-wider">{t('files.actions') || 'Actions'}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {files.map((f) => {
                   const uName = filenameToUnitName(f.name)
                   const unit = units.find((u) => u.name === uName)
@@ -225,12 +225,12 @@ export function FilesPage() {
                   return (
                     <tr
                       key={f.name}
-                      className="border-b border-border hover:bg-surface-raised transition-colors"
+                      className="hover:bg-surface-raised/50 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <button
                           onClick={() => selectFile(f.name)}
-                          className="text-accent font-semibold hover:underline font-mono text-left"
+                          className="text-accent font-semibold hover:underline font-mono text-left font-semibold"
                         >
                           {f.name}
                         </button>
@@ -240,10 +240,10 @@ export function FilesPage() {
                         {unit ? (
                           <StatusBadge state={unit.activeState} />
                         ) : (
-                          <span className="text-text-muted italic">{t('files.notDeployed') || 'Not deployed'}</span>
+                          <span className="text-text-muted italic font-medium">{t('files.notDeployed') || 'Not deployed'}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-text-secondary">
+                      <td className="px-4 py-3 font-mono text-text-secondary font-medium">
                         {unit?.subState || '-'}
                       </td>
                       <td className="px-4 py-3">
@@ -253,7 +253,7 @@ export function FilesPage() {
                               {unit.activeState !== 'active' ? (
                                 <ActionBtn
                                   icon={Play}
-                                  color="text-accent hover:bg-accent-dim"
+                                  color="text-accent hover:bg-accent-dim animate-pulse"
                                   loading={actionLoading === unit.name}
                                   onClick={() => handleAction(unit.name, () => startUnit(unit.name))}
                                   title={t('header.start') || 'Start'}
@@ -301,12 +301,12 @@ export function FilesPage() {
                                   toast.error((e as Error).message)
                                 }
                               }}
-                              className="px-2 py-0.5 text-[10px] font-semibold bg-accent-dim text-accent rounded hover:bg-accent/20 transition-all mr-1"
+                              className="px-3 py-1 text-xs font-semibold bg-accent-dim text-accent rounded hover:bg-accent/20 transition-all mr-1"
                             >
                               {t('files.deploy') || 'Deploy'}
                             </button>
                           )}
-                          <span className="w-[1px] h-3 bg-border mx-1" />
+                          <span className="w-[1px] h-4 bg-border mx-1.5" />
                           <ActionBtn
                             icon={Save}
                             color="text-text-secondary hover:text-accent hover:bg-accent-dim"
@@ -334,21 +334,21 @@ export function FilesPage() {
         {/* Creation Dialog Modal */}
         {showCreate && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-surface border border-border rounded-lg shadow-xl max-w-sm w-full p-4 space-y-4">
+            <div className="bg-surface border border-border rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-text-primary">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-text-primary">
                   {t('files.createTitle') || 'Create New Quadlet'}
                 </h3>
                 <button
                   onClick={() => setShowCreate(false)}
-                  className="text-text-muted hover:text-text-primary text-xs"
+                  className="text-text-muted hover:text-text-primary text-sm font-semibold"
                 >
                   ✕
                 </button>
               </div>
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-text-muted uppercase tracking-wider font-semibold">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-text-muted uppercase tracking-wider font-semibold">
                     {t('files.filename') || 'Filename'}
                   </label>
                   <div className="flex gap-1.5">
@@ -358,34 +358,34 @@ export function FilesPage() {
                       onChange={(e) => setNewFilename(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                       placeholder="nginx"
-                      className="flex-1 bg-surface-raised border border-border rounded px-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                      className="flex-1 bg-surface-raised border border-border rounded px-4 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
                       autoFocus
                     />
                     <select
                       value={newExtension}
                       onChange={(e) => setNewExtension(e.target.value)}
-                      className="bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent font-mono cursor-pointer"
+                      className="bg-surface-raised border border-border rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent font-mono cursor-pointer"
                     >
-                      <option value=".container font-mono">.container</option>
-                      <option value=".volume font-mono">.volume</option>
-                      <option value=".network font-mono">.network</option>
-                      <option value=".pod font-mono">.pod</option>
-                      <option value=".kube font-mono">.kube</option>
-                      <option value=".image font-mono">.image</option>
+                      <option value=".container">.container</option>
+                      <option value=".volume">.volume</option>
+                      <option value=".network">.network</option>
+                      <option value=".pod">.pod</option>
+                      <option value=".kube">.kube</option>
+                      <option value=".image">.image</option>
                     </select>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-2 text-xs pt-2">
+              <div className="flex items-center justify-end gap-2 text-sm pt-2">
                 <button
                   onClick={() => setShowCreate(false)}
-                  className="px-3 py-1.5 border border-border rounded hover:bg-surface-raised transition-colors text-text-secondary"
+                  className="px-4 py-2 border border-border rounded hover:bg-surface-raised transition-colors text-text-secondary font-semibold"
                 >
                   {t('common.cancel') || 'Cancel'}
                 </button>
                 <button
                   onClick={handleCreate}
-                  className="px-3 py-1.5 bg-accent text-background rounded hover:bg-accent/90 transition-colors font-semibold"
+                  className="px-4 py-2 bg-accent text-background rounded hover:bg-accent/90 transition-colors font-bold"
                 >
                   {t('common.create') || 'Create'}
                 </button>
@@ -404,25 +404,25 @@ export function FilesPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => selectFile(null)}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary border border-border rounded bg-surface hover:bg-surface-raised transition-colors font-semibold"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-text-secondary hover:text-text-primary border border-border rounded bg-surface hover:bg-surface-raised transition-colors font-semibold"
           >
             {t('files.backToList') || '← Back to List'}
           </button>
-          <span className="text-xs text-accent font-mono font-semibold">{selectedFile}</span>
+          <span className="text-sm text-accent font-mono font-semibold">{selectedFile}</span>
           <ViewToggle mode={mode} onChange={handleModeChange} />
         </div>
         <div className="flex items-center gap-1.5">
           {validation && (
             <span
               className={cn(
-                'flex items-center gap-1 text-[10px] mr-2',
+                'flex items-center gap-1.5 text-xs mr-2 font-semibold',
                 validation.valid ? 'text-accent' : 'text-danger'
               )}
             >
               {validation.valid ? (
-                <CheckCircle size={10} />
+                <CheckCircle size={14} />
               ) : (
-                <AlertTriangle size={10} />
+                <AlertTriangle size={14} />
               )}
               {validation.valid ? t('files.valid') : t('files.invalid')}
             </span>
@@ -458,7 +458,7 @@ export function FilesPage() {
 
       {/* Validation warnings */}
       {validation?.warnings && validation.warnings.length > 0 && (
-        <div className="px-3 py-2 bg-yellow-500/5 border border-yellow-500/20 rounded text-[10px] text-yellow-400 font-medium">
+        <div className="px-4 py-2.5 bg-yellow-500/5 border border-yellow-500/20 rounded text-xs text-yellow-400 font-semibold">
           {validation.warnings.map((w, i) => (
             <div key={i}>{w}</div>
           ))}
@@ -467,7 +467,7 @@ export function FilesPage() {
 
       {/* Systemd service status banner */}
       {selectedFile && (
-        <div className="px-3 py-2 bg-surface border border-border rounded flex flex-col md:flex-row md:items-center justify-between text-xs gap-2">
+        <div className="px-4 py-3 bg-surface border border-border rounded flex flex-col md:flex-row md:items-center justify-between text-sm gap-2">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <div className="flex items-center gap-1.5">
               <span className="text-text-muted">{t('files.systemdService') || 'Systemd Service'}:</span>
@@ -484,13 +484,13 @@ export function FilesPage() {
                 {currentUnit.loadState === 'loaded' && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-text-muted">{t('files.activeSubstate') || 'Active Substate'}:</span>
-                    <span className="text-text-secondary font-medium">{currentUnit.subState}</span>
+                    <span className="text-text-secondary font-semibold font-mono">{currentUnit.subState}</span>
                   </div>
                 )}
               </>
             ) : (
-              <span className="text-yellow-500 font-medium flex items-center gap-1">
-                <AlertTriangle size={10} />
+              <span className="text-yellow-500 font-semibold flex items-center gap-1">
+                <AlertTriangle size={14} />
                 {t('files.notDeployed') || 'Not deployed to systemd yet'}
               </span>
             )}
@@ -541,7 +541,7 @@ export function FilesPage() {
             <button
               onClick={handleApply}
               disabled={saving}
-              className="px-2.5 py-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded text-[10px] font-semibold transition-all duration-200 self-end md:self-auto"
+              className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/20 rounded text-xs font-bold transition-all duration-200 self-end md:self-auto"
             >
               {t('files.deployAndStart') || 'Deploy & Start Service'}
             </button>
@@ -584,11 +584,11 @@ function ToolbarBtn({
       disabled={disabled}
       title={label}
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1 text-[10px] rounded transition-all duration-200 disabled:opacity-50',
+        'flex items-center gap-1.5 px-3 py-1.5 text-xs rounded transition-all duration-200 disabled:opacity-50 font-semibold',
         color
       )}
     >
-      <Icon size={12} />
+      <Icon size={14} />
       <span className="hidden lg:inline">{label}</span>
     </button>
   )
@@ -636,24 +636,24 @@ function ActionBtn({
       disabled={loading}
       title={title}
       className={cn(
-        'p-1.5 rounded transition-all duration-200 disabled:opacity-50',
+        'p-2 rounded transition-all duration-200 disabled:opacity-50',
         color
       )}
     >
-      <Icon size={12} />
+      <Icon size={14} />
     </button>
   )
 }
 
 function StatusBadge({ state }: { state: string }) {
   const colors: Record<string, string> = {
-    active: 'bg-accent-dim text-accent',
-    inactive: 'bg-surface-raised text-text-muted',
+    active: 'bg-accent-dim text-accent border border-accent/20',
+    inactive: 'bg-surface-raised text-text-muted border border-border',
     failed: 'bg-red-500/10 text-danger border border-red-500/20',
   }
   return (
     <span
-      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+      className={`inline-block px-2 py-0.5 rounded text-xs font-semibold uppercase ${
         colors[state] || colors.inactive
       }`}
     >

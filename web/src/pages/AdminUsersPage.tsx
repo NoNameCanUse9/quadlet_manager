@@ -64,46 +64,47 @@ export function AdminUsersPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-4xl">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">{t('users.title')}</h2>
+        <h2 className="text-base font-bold tracking-wider text-text-primary uppercase">{t('users.title')}</h2>
         <button
           onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] text-accent hover:bg-accent-dim rounded transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-accent hover:bg-accent-dim border border-accent/25 rounded transition-all font-semibold"
         >
-          <UserPlus size={12} />
+          <UserPlus size={14} />
           {t('users.addUser')}
         </button>
       </div>
 
       {showAdd && (
-        <div className="border border-border rounded bg-surface p-3 space-y-2">
+        <div className="border border-border rounded bg-surface p-4 space-y-3 max-w-md">
           <input
             type="text"
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
             placeholder={t('users.username') || 'Username'}
-            className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
+            className="w-full bg-surface-raised border border-border rounded px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
           <input
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
             placeholder={t('users.password') || 'Password'}
-            className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
+            className="w-full bg-surface-raised border border-border rounded px-3 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
           <div className="flex items-center gap-2">
             <select
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              className="bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
+              className="bg-surface-raised border border-border rounded px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
             >
               <option value="user">{t('users.roleUser')}</option>
               <option value="admin">{t('users.roleAdmin')}</option>
             </select>
             <button
               onClick={handleAdd}
-              className="px-3 py-1.5 bg-accent text-background rounded text-xs hover:bg-accent/90 transition-colors"
+              className="px-4 py-1.5 bg-accent text-background rounded text-sm hover:bg-accent/90 transition-colors font-semibold ml-auto"
             >
               {t('common.create')}
             </button>
@@ -111,52 +112,60 @@ export function AdminUsersPage() {
         </div>
       )}
 
+      {/* Main List Table */}
       <div className="border border-border rounded bg-surface overflow-hidden">
         {loading ? (
-          <div className="p-4 text-xs text-text-muted">{t('common.loading')}</div>
+          <div className="p-6 text-sm text-text-muted font-medium">{t('common.loading')}</div>
         ) : (
-          <table className="w-full text-xs">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="text-text-muted text-left border-b border-border bg-surface-raised">
-                <th className="px-3 py-2 font-medium">{t('users.username')}</th>
-                <th className="px-3 py-2 font-medium">{t('users.role')}</th>
-                <th className="px-3 py-2 font-medium">{t('users.created')}</th>
-                <th className="px-3 py-2 font-medium text-right">{t('common.actions')}</th>
+              <tr className="bg-surface-raised text-text-secondary border-b border-border">
+                <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('users.username')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('users.role')}</th>
+                <th className="px-4 py-3 text-left font-semibold text-text-muted text-xs uppercase tracking-wider">{t('users.created')}</th>
+                <th className="px-4 py-3 text-right font-semibold text-text-muted text-xs uppercase tracking-wider">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
                 <tr
                   key={u.id}
-                  className="border-b border-border hover:bg-surface-raised transition-colors"
+                  className="border-b border-border hover:bg-surface-raised/50 transition-colors"
                 >
-                  <td className="px-3 py-2 text-text-primary">{u.username}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3 text-text-primary font-semibold">{u.username}</td>
+                  <td className="px-4 py-3">
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] ${
+                      className={`px-2 py-0.5 rounded text-xs font-semibold uppercase ${
                         u.role === 'admin'
-                          ? 'bg-accent-dim text-accent'
-                          : 'bg-surface-raised text-text-muted'
+                          ? 'bg-accent-dim text-accent border border-accent/20'
+                          : 'bg-surface-raised text-text-muted border border-border'
                       }`}
                     >
                       {u.role === 'admin' ? t('users.roleAdmin') : t('users.roleUser')}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-text-muted">
+                  <td className="px-4 py-3 text-text-secondary">
                     {new Date(u.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-3 text-right">
                     {u.id !== currentUser?.id && (
                       <button
                         onClick={() => handleDelete(u.id)}
-                        className="p-1 text-text-muted hover:text-danger transition-colors"
+                        className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-text-secondary font-medium">
+                    No users found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}
