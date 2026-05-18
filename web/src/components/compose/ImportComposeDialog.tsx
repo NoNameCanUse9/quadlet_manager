@@ -13,6 +13,7 @@ export function ImportComposeDialog({ open, onClose }: Props) {
   const { t } = useTranslation()
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
+  const [dir, setDir] = useState('')
   const importMut = useImportComposeProject()
 
   if (!open) return null
@@ -20,10 +21,11 @@ export function ImportComposeDialog({ open, onClose }: Props) {
   const handleSubmit = async () => {
     if (!name.trim() || !content.trim()) return
     try {
-      await importMut.mutateAsync({ name: name.trim(), content })
+      await importMut.mutateAsync({ name: name.trim(), content, dir: dir.trim() || undefined })
       toast.success(t('compose.imported'))
       setName('')
       setContent('')
+      setDir('')
       onClose()
     } catch (e: any) {
       toast.error(e.message)
@@ -45,6 +47,13 @@ export function ImportComposeDialog({ open, onClose }: Props) {
             placeholder={t('compose.namePlaceholder')}
             value={name}
             onChange={e => setName(e.target.value)}
+            className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary"
+          />
+          <input
+            type="text"
+            placeholder={t('compose.dirPlaceholder')}
+            value={dir}
+            onChange={e => setDir(e.target.value)}
             className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-xs text-text-primary"
           />
           <textarea

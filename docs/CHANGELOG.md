@@ -18,6 +18,11 @@
   - 在 `FilesPage` 文件页面的新建文件对话框中，将手动输入完整文件名改为 **文件名输入框 + 后缀下拉选择框** 的组合。
   - 默认选择器选中 `.container`，下拉框包含全部 6 种合法的后缀名：`.container`、`.volume`、`.network`、`.pod` 、`.kube`、`.image`。
 
+- **Compose 导入支持自定义存储目录**:
+  - `ImportComposeDialog` 弹窗新增可选的「存储目录」输入框，留空则使用默认 quadletDir。
+  - 后端 `ComposeProvider.ImportProject` 接口新增 `dir` 参数，支持将项目存储到自定义目录。
+  - API 端点 `POST /api/v1/compose/import` 请求体新增可选 `dir` 字段。
+
 ### 修复
 - **i18n 全面补全**:
   - 在 `en.json` 与 `zh.json` 中完整补全了 Compose UI 相关词汇、容器常用 CPU% / 内存等状态的中英文对照翻译。

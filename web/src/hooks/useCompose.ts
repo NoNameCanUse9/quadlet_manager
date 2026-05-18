@@ -12,8 +12,8 @@ export function useComposeProjects() {
 export function useImportComposeProject() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ name, content }: { name: string; content: string }) =>
-      api.importComposeProject(name, content),
+    mutationFn: ({ name, content, dir }: { name: string; content: string; dir?: string }) =>
+      api.importComposeProject(name, content, dir),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compose-projects'] }),
   })
 }

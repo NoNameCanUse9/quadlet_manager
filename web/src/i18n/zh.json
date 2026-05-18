@@ -82,6 +82,7 @@
     "import": "导入",
     "importTitle": "导入 Compose 文件",
     "namePlaceholder": "项目名称",
+    "dirPlaceholder": "存储目录（留空使用默认目录）",
     "contentPlaceholder": "粘贴 docker-compose.yml 内容...",
     "up": "启动",
     "down": "停止",

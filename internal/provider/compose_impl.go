@@ -37,15 +37,20 @@ func (p *ComposeProviderImpl) projectFile(name string) string {
 }
 
 // ImportProject saves a docker-compose.yml to the project directory.
-func (p *ComposeProviderImpl) ImportProject(ctx context.Context, name string, content string) error {
+// If dir is non-empty, the project is stored under {dir}/.compose/{name}/ instead of the default quadletDir.
+func (p *ComposeProviderImpl) ImportProject(ctx context.Context, name string, content string, dir string) error {
 	if err := validateProjectName(name); err != nil {
 		return err
 	}
-	dir := p.projectDir(name)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	base := p.quadletDir
+	if dir != "" {
+		base = dir
+	}
+	projectDir := filepath.Join(base, ".compose", name)
+	if err := os.MkdirAll(projectDir, 0o755); err != nil {
 		return fmt.Errorf("create project dir: %w", err)
 	}
-	return os.WriteFile(p.projectFile(name), []byte(content), 0o644)
+	return os.WriteFile(filepath.Join(projectDir, "docker-compose.yml"), []byte(content), 0o644)
 }
 
 // ListProjects scans the .compose directory for projects.

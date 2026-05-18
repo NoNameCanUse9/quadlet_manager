@@ -470,6 +470,114 @@ Authorization: Bearer <token>
 
 ---
 
+## Compose 项目管理
+
+### 列出项目
+
+```
+GET /api/v1/compose
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+[
+  {
+    "name": "myapp",
+    "file": "/home/user/.config/containers/systemd/.compose/myapp/docker-compose.yml",
+    "status": "running",
+    "services": ["web", "db"]
+  }
+]
+```
+
+### 导入项目
+
+```
+POST /api/v1/compose/import
+Authorization: Bearer <token>
+```
+
+**请求**:
+```json
+{
+  "name": "myapp",
+  "content": "services:\n  web:\n    image: nginx:latest\n    ports:\n      - \"8080:80\"\n",
+  "dir": "/home/user/custom-dir"
+}
+```
+
+- `name` (必填): 项目名称，仅允许 `[a-zA-Z0-9._-]`，首字符须为字母或数字
+- `content` (必填): docker-compose.yml 文件内容
+- `dir` (可选): 自定义存储目录，留空则使用默认 quadletDir 下的 `.compose/` 子目录
+
+**响应**:
+```json
+{ "status": "imported" }
+```
+
+### 删除项目
+
+```
+DELETE /api/v1/compose/:name
+Authorization: Bearer <token>
+```
+
+### 启动项目
+
+```
+POST /api/v1/compose/:name/up
+Authorization: Bearer <token>
+```
+
+### 停止项目
+
+```
+POST /api/v1/compose/:name/down
+Authorization: Bearer <token>
+```
+
+### 项目服务列表
+
+```
+GET /api/v1/compose/:name/ps
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+[
+  { "name": "web", "state": "running", "image": "nginx:latest", "ports": "0.0.0.0:8080->80/tcp" }
+]
+```
+
+### 项目日志
+
+```
+GET /api/v1/compose/:name/logs?service=web&tail=100
+Authorization: Bearer <token>
+```
+
+### 转换为 Quadlet
+
+```
+GET /api/v1/compose/:name/convert
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+[
+  {
+    "filename": "web.container",
+    "content": "[Unit]\nDescription=myapp - web service\n\n[Container]\nImage=nginx:latest\n...",
+    "warnings": []
+  }
+]
+```
+
+---
+
 ## 用户设置
 
 ### 获取设置

@@ -82,6 +82,7 @@
     "import": "Import",
     "importTitle": "Import Compose File",
     "namePlaceholder": "Project name",
+    "dirPlaceholder": "Storage directory (leave empty for default)",
     "contentPlaceholder": "Paste docker-compose.yml content...",
     "up": "Up",
     "down": "Down",

@@ -19,7 +19,7 @@ func NewMockCompose() *MockCompose {
 	return &MockCompose{}
 }
 
-func (m *MockCompose) ImportProject(_ context.Context, name string, _ string) error {
+func (m *MockCompose) ImportProject(_ context.Context, name string, _ string, _ string) error {
 	if m.Err != nil {
 		return m.Err
 	}

@@ -29,12 +29,13 @@ func (h *ComposeHandler) ImportProject(c *gin.Context) {
 	var req struct {
 		Name    string `json:"name" binding:"required"`
 		Content string `json:"content" binding:"required"`
+		Dir     string `json:"dir"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := h.compose.ImportProject(c.Request.Context(), req.Name, req.Content); err != nil {
+	if err := h.compose.ImportProject(c.Request.Context(), req.Name, req.Content, req.Dir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

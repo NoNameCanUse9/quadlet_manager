@@ -98,8 +98,8 @@ export const api = {
 
   // Compose
   listComposeProjects: () => request<ComposeProject[]>('/compose'),
-  importComposeProject: (name: string, content: string) =>
-    request('/compose/import', { method: 'POST', body: JSON.stringify({ name, content }) }),
+  importComposeProject: (name: string, content: string, dir?: string) =>
+    request('/compose/import', { method: 'POST', body: JSON.stringify({ name, content, dir: dir || '' }) }),
   removeComposeProject: (name: string) =>
     request(`/compose/${name}`, { method: 'DELETE' }),
   composeUp: (name: string) =>

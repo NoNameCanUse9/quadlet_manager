@@ -20,7 +20,7 @@ services:
       - "8080:80"
     restart: always
 `
-	if err := p.ImportProject(context.Background(), "myapp", yml); err != nil {
+	if err := p.ImportProject(context.Background(), "myapp", yml, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -64,7 +64,7 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: mydb
 `
-	if err := p.ImportProject(context.Background(), "myapp", yml); err != nil {
+	if err := p.ImportProject(context.Background(), "myapp", yml, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -100,7 +100,7 @@ services:
     image: node:20
     command: ["node", "server.js"]
 `
-	if err := p.ImportProject(context.Background(), "stack", yml); err != nil {
+	if err := p.ImportProject(context.Background(), "stack", yml, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -133,7 +133,7 @@ services:
   build-only:
     build: .
 `
-	if err := p.ImportProject(context.Background(), "app", yml); err != nil {
+	if err := p.ImportProject(context.Background(), "app", yml, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -178,7 +178,7 @@ services:
     image: alpine
     restart: ` + tt.input + `
 `
-		if err := p.ImportProject(context.Background(), "test-"+tt.expect, yml); err != nil {
+		if err := p.ImportProject(context.Background(), "test-"+tt.expect, yml, ""); err != nil {
 			t.Fatalf("ImportProject(%q): %v", tt.input, err)
 		}
 		convs, err := p.ConvertToQuadlet(context.Background(), "test-"+tt.expect)
@@ -202,7 +202,7 @@ services:
     entrypoint: ["/entrypoint.sh"]
     command: ["--port", "3000"]
 `
-	if err := p.ImportProject(context.Background(), "myapp", yml); err != nil {
+	if err := p.ImportProject(context.Background(), "myapp", yml, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -246,7 +246,7 @@ func TestImportProject_CreatesFile(t *testing.T) {
 	p := NewComposeProviderImpl(dir)
 
 	content := "services:\n  web:\n    image: nginx\n"
-	if err := p.ImportProject(context.Background(), "test", content); err != nil {
+	if err := p.ImportProject(context.Background(), "test", content, ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 
@@ -260,11 +260,38 @@ func TestImportProject_CreatesFile(t *testing.T) {
 	}
 }
 
+func TestImportProject_CustomDir(t *testing.T) {
+	defaultDir := t.TempDir()
+	customDir := t.TempDir()
+	p := NewComposeProviderImpl(defaultDir)
+
+	content := "services:\n  web:\n    image: nginx\n"
+	if err := p.ImportProject(context.Background(), "myapp", content, customDir); err != nil {
+		t.Fatalf("ImportProject: %v", err)
+	}
+
+	// Should be under customDir, not defaultDir
+	path := filepath.Join(customDir, ".compose", "myapp", "docker-compose.yml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if string(data) != content {
+		t.Errorf("content mismatch:\ngot:  %q\nwant: %q", string(data), content)
+	}
+
+	// Should NOT exist under defaultDir
+	unexpected := filepath.Join(defaultDir, ".compose", "myapp", "docker-compose.yml")
+	if _, err := os.Stat(unexpected); err == nil {
+		t.Error("file should not exist under default dir")
+	}
+}
+
 func TestRemoveProject(t *testing.T) {
 	dir := t.TempDir()
 	p := NewComposeProviderImpl(dir)
 
-	if err := p.ImportProject(context.Background(), "old", "services: {}"); err != nil {
+	if err := p.ImportProject(context.Background(), "old", "services: {}", ""); err != nil {
 		t.Fatalf("ImportProject: %v", err)
 	}
 	if err := p.RemoveProject(context.Background(), "old"); err != nil {

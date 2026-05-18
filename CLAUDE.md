@@ -130,8 +130,8 @@ internal/
 | `mock_systemd.go` | **SystemdProvider Mock**。内存中模拟 Units map，可控返回错误。用于测试。 | `MockSystemd`, `NewMockSystemd()` | 测试文件 |
 | `mock_podman.go` | **PodmanProvider Mock**。内存中模拟容器/镜像列表。 | `MockPodman`, `NewMockPodman()` | 测试文件 |
 | `mock_quadletfs.go` | **QuadletFS Mock**。内存中模拟 Files map。 | `MockQuadletFS`, `NewMockQuadletFS()` | 测试文件 |
-| `compose.go` | **ComposeProvider 接口定义**。声明 ImportProject/ListProjects/RemoveProject/Up/Down/Ps/Logs/ConvertToQuadlet。 | `ComposeProvider` 接口 | handler/compose_handler.go |
-| `compose_impl.go` | **Compose 实现**。通过 `os/exec` 调用 `podman compose`。项目存储在 `{quadletDir}/.compose/{name}/docker-compose.yml`。ConvertToQuadlet 将 docker-compose.yml 字段映射为 Quadlet INI 格式。支持 YAML 解析环境变量（map/list 格式）。 | `ComposeProviderImpl`, `NewComposeProviderImpl()` | main.go |
+| `compose.go` | **ComposeProvider 接口定义**。声明 ImportProject(name, content, dir)/ListProjects/RemoveProject/Up/Down/Ps/Logs/ConvertToQuadlet。ImportProject 的 `dir` 参数可选，非空时项目存储到自定义目录。 | `ComposeProvider` 接口 | handler/compose_handler.go |
+| `compose_impl.go` | **Compose 实现**。通过 `os/exec` 调用 `podman compose`。项目默认存储在 `{quadletDir}/.compose/{name}/docker-compose.yml`，ImportProject 支持 `dir` 参数指定自定义存储目录。ConvertToQuadlet 将 docker-compose.yml 字段映射为 Quadlet INI 格式。支持 YAML 解析环境变量（map/list 格式）。 | `ComposeProviderImpl`, `NewComposeProviderImpl()` | main.go |
 | `mock_compose.go` | **ComposeProvider Mock**。内存中模拟项目列表。 | `MockCompose`, `NewMockCompose()` | 测试文件 |
 | `*_test.go` | 接口合规性测试 + 文件名验证测试 + FS CRUD 测试 + Compose 转换测试。 | - | - |
 
@@ -291,7 +291,7 @@ web/
 | `editor/QuadletEditor.tsx` | **CodeMirror 6 编辑器封装**。自定义 Quadlet INI 语法高亮、暗色主题。 | FilesPage |
 | `editor/ViewToggle.tsx` | **编辑器/表单模式切换**。 | FilesPage |
 | `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment/Labels 等字段的表单编辑，双向同步编辑器内容。导出 `wizardToQuadlet()` 和 `quadletToWizard()` 用于 Quadlet INI 生成/解析。 | FilesPage, CreateContainerDialog |
-| `compose/ImportComposeDialog.tsx` | **导入 Compose 弹窗**。输入项目名 + 粘贴 docker-compose.yml 内容。 | ContainersPage |
+| `compose/ImportComposeDialog.tsx` | **导入 Compose 弹窗**。输入项目名、可选存储目录 + 粘贴 docker-compose.yml 内容。目录留空则使用默认 quadletDir。 | ContainersPage |
 | `compose/ConvertPreviewDialog.tsx` | **转换预览弹窗**。显示转换后的 Quadlet 文件内容，支持 Tab 切换多文件、复制、警告提示、保存并应用全部。 | ContainersPage |
 | `container/CreateContainerDialog.tsx` | **创建容器弹窗**（Portainer 风格）。基于 WizardData 表单填写 Image/Ports/Volumes/Env/Labels 等参数，生成 Quadlet .container 文件并部署。 | ContainersPage |
 | `AuthGuard.tsx` | **路由守卫**。未认证时跳转 /login，未初始化时跳转 /init。 | router |
@@ -577,7 +577,7 @@ CREATE TABLE config (
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/v1/compose` | 列出 Compose 项目 |
-| POST | `/api/v1/compose/import` | 导入 docker-compose.yml |
+| POST | `/api/v1/compose/import` | 导入 docker-compose.yml（body: name, content, dir[可选]） |
 | DELETE | `/api/v1/compose/:name` | 删除项目 |
 | POST | `/api/v1/compose/:name/up` | 启动项目 |
 | POST | `/api/v1/compose/:name/down` | 停止项目 |
@@ -855,7 +855,7 @@ WantedBy=default.target
 | config | 5 | 默认值、覆盖、验证 |
 | handler | 31 | 认证、单元、文件、设置、系统信息 |
 | parser | 6 | 解析/生成往返、多值键、空文件 |
-| provider | 24 | 接口定义、文件名验证、FS CRUD、Compose 转换 |
+| provider | 31 | 接口定义、文件名验证、FS CRUD、Compose 转换、自定义目录导入 |
 | service | 21 | 单元启动/列表、文件 CRUD/验证、编排器、ApplyFile 自动启用、开机自启 |
 | store | 11 | 数据库创建、用户 CRUD、设置 CRUD |
 

@@ -7,7 +7,7 @@ import (
 )
 
 type ComposeProvider interface {
-	ImportProject(ctx context.Context, name string, content string) error
+	ImportProject(ctx context.Context, name string, content string, dir string) error
 	ListProjects(ctx context.Context) ([]model.ComposeProject, error)
 	RemoveProject(ctx context.Context, name string) error
 
