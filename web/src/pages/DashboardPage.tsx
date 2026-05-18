@@ -17,9 +17,9 @@ export function DashboardPage() {
     fetchStats()
   }, [fetchUnits, fetchContainers, fetchStats])
 
-  const active = units.filter((u) => u.activeState === 'active').length
-  const failed = units.filter((u) => u.activeState === 'failed').length
-  const inactive = units.length - active - failed
+  const active = (units ?? []).filter((u) => u.activeState === 'active').length
+  const failed = (units ?? []).filter((u) => u.activeState === 'failed').length
+  const inactive = (units ?? []).length - active - failed
 
   return (
     <div className="space-y-4">
@@ -69,11 +69,11 @@ export function DashboardPage() {
           </h3>
         </div>
         <div className="p-3">
-          {containers.length === 0 ? (
+          {(containers ?? []).length === 0 ? (
             <p className="text-xs text-text-muted">{t('dashboard.noContainers')}</p>
           ) : (
             <div className="space-y-2">
-              {containers.map((c) => {
+              {(containers ?? []).map((c) => {
                 const s = stats.find((st) => st.id === c.id)
                 return (
                   <div
@@ -119,7 +119,7 @@ export function DashboardPage() {
         <div className="p-3">
           {unitsLoading ? (
             <p className="text-xs text-text-muted">{t('common.loading')}</p>
-          ) : units.length === 0 ? (
+          ) : (units ?? []).length === 0 ? (
             <p className="text-xs text-text-muted">{t('units.noUnits')}</p>
           ) : (
             <table className="w-full text-xs">
@@ -131,7 +131,7 @@ export function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {units.map((u) => (
+                {(units ?? []).map((u) => (
                   <tr key={u.name} className="border-t border-border">
                     <td className="py-1.5 text-text-primary">{u.name}</td>
                     <td className="py-1.5">

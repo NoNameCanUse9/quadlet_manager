@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { useAuth } from '@/store/useAuth'
 
 type WSHandler = (msg: { type: string; data: unknown }) => void
 
@@ -8,8 +9,10 @@ export function useWebSocket(onMessage: WSHandler) {
   handlerRef.current = onMessage
 
   const connect = useCallback(() => {
+    const token = useAuth.getState().token
+    if (!token) return
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const ws = new WebSocket(`${proto}//${window.location.host}/ws`)
+    const ws = new WebSocket(`${proto}//${window.location.host}/api/v1/ws?token=${token}`)
     wsRef.current = ws
 
     ws.onmessage = (e) => {

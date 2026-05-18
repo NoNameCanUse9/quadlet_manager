@@ -66,7 +66,7 @@ func (s *UnitService) ListUnits(ctx context.Context, userID int64) ([]model.Unit
 		return nil, fmt.Errorf("list systemd units: %w", err)
 	}
 
-	var filtered []model.UnitStatus
+	filtered := make([]model.UnitStatus, 0)
 	for _, u := range allUnits {
 		if path, ok := serviceMap[u.Name]; ok {
 			u.SourcePath = path

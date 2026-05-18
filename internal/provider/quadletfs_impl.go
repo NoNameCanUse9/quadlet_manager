@@ -25,12 +25,12 @@ func (fs *QuadletFSImpl) ScanDir(_ context.Context) ([]model.QuadletFile, error)
 			if mkErr := os.MkdirAll(fs.baseDir, 0755); mkErr != nil {
 				return nil, fmt.Errorf("create dir %s: %w", fs.baseDir, mkErr)
 			}
-			return nil, nil
+			return []model.QuadletFile{}, nil
 		}
 		return nil, fmt.Errorf("read dir %s: %w", fs.baseDir, err)
 	}
 
-	var files []model.QuadletFile
+	files := make([]model.QuadletFile, 0)
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
