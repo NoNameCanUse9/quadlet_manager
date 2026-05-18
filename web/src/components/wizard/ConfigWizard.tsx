@@ -9,6 +9,7 @@ export interface WizardData {
   ports: string[]
   volumes: string[]
   env: string[]
+  labels: string[]
   user: string
   group: string
   hostName: string
@@ -22,6 +23,7 @@ const defaultData: WizardData = {
   ports: [],
   volumes: [],
   env: [],
+  labels: [],
   user: '',
   group: '',
   hostName: '',
@@ -95,6 +97,16 @@ export function ConfigWizard({ value, onChange }: ConfigWizardProps) {
         />
       </Section>
 
+      {/* Labels */}
+      <Section title={t('wizard.labels')}>
+        <MultiInput
+          items={data.labels}
+          onAdd={(v) => update({ labels: [...data.labels, v] })}
+          onRemove={(i) => update({ labels: data.labels.filter((_, idx) => idx !== i) })}
+          placeholder="key=value"
+        />
+      </Section>
+
       {/* Network / HostName */}
       <Section title={t('wizard.network')}>
         <div className="grid grid-cols-2 gap-2">
@@ -158,6 +170,7 @@ export function wizardToQuadlet(data: WizardData, unitName = 'my-container'): st
   data.ports.forEach((p) => lines.push(`PublishPort=${p}`))
   data.volumes.forEach((v) => lines.push(`Volume=${v}`))
   data.env.forEach((e) => lines.push(`Environment=${e}`))
+  data.labels.forEach((l) => lines.push(`Label=${l}`))
   if (data.user) lines.push(`User=${data.user}`)
   if (data.group) lines.push(`Group=${data.group}`)
   if (data.hostName) lines.push(`HostName=${data.hostName}`)
@@ -201,6 +214,7 @@ export function quadletToWizard(content: string): WizardData {
         case 'PublishPort': data.ports.push(val); break
         case 'Volume': data.volumes.push(val); break
         case 'Environment': data.env.push(val); break
+        case 'Label': data.labels.push(val); break
         case 'User': data.user = val; break
         case 'Group': data.group = val; break
         case 'HostName': data.hostName = val; break

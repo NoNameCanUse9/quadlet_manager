@@ -63,7 +63,19 @@
     "restarted": "已重启",
     "paused": "已暂停",
     "removed": "已删除",
-    "autostart": "开机自启"
+    "autostart": "开机自启",
+    "source": "来源",
+    "sourceAll": "全部来源",
+    "typeQuadlet": "Quadlet",
+    "typeCompose": "Compose",
+    "typePodman": "Podman",
+    "createContainer": "新建容器",
+    "createTitle": "创建容器",
+    "containerName": "容器名称",
+    "createAndStart": "创建并启动",
+    "createSuccess": "容器创建成功",
+    "autostartEnabled": "已启用开机自启",
+    "autostartDisabled": "已禁用开机自启"
   },
   "compose": {
     "title": "Compose 项目",
@@ -78,12 +90,13 @@
     "services": "服务",
     "noProjects": "暂无 Compose 项目",
     "removeConfirm": "确认删除 Compose 项目 \"{{name}}\" 吗？",
-    "converted": "转换成功",
+    "converted": "转换并部署成功",
     "imported": "导入成功",
     "started": "Compose 项目已启动",
     "stopped": "Compose 项目已停止",
     "removed": "Compose 项目已删除",
-    "warnings": "警告"
+    "warnings": "警告",
+    "saveAndApply": "保存并应用全部"
   },
   "images": {
     "title": "镜像",
@@ -158,7 +171,8 @@
     "uid": "UID (如 1000)",
     "gid": "GID (如 1000)",
     "restartPolicy": "重启策略",
-    "networkName": "网络名称"
+    "networkName": "网络名称",
+    "labels": "标签"
   },
   "common": {
     "loading": "加载中...",

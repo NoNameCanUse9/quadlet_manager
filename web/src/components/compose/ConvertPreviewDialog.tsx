@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Copy, Check } from 'lucide-react'
+import { X, Copy, Check, Loader2 } from 'lucide-react'
+import { api } from '@/api/client'
+import { toast } from 'sonner'
 import type { QuadletConversion } from '@/api/client'
 
 interface Props {
@@ -8,12 +10,14 @@ interface Props {
   onClose: () => void
   conversions: QuadletConversion[]
   projectName: string
+  onApplied?: () => void
 }
 
-export function ConvertPreviewDialog({ open, onClose, conversions, projectName }: Props) {
+export function ConvertPreviewDialog({ open, onClose, conversions, projectName, onApplied }: Props) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [applying, setApplying] = useState(false)
 
   if (!open || conversions.length === 0) return null
 
@@ -23,6 +27,22 @@ export function ConvertPreviewDialog({ open, onClose, conversions, projectName }
     navigator.clipboard.writeText(active.content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleApplyAll = async () => {
+    setApplying(true)
+    try {
+      for (const conv of conversions) {
+        await api.applyFile(conv.filename, conv.content)
+      }
+      toast.success(t('compose.converted'))
+      onApplied?.()
+      onClose()
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setApplying(false)
+    }
   }
 
   return (
@@ -79,12 +99,20 @@ export function ConvertPreviewDialog({ open, onClose, conversions, projectName }
           </pre>
         </div>
 
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
             className="px-3 py-1.5 text-xs border border-border rounded hover:bg-surface-raised"
           >
             {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleApplyAll}
+            disabled={applying}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 disabled:opacity-50"
+          >
+            {applying && <Loader2 size={12} className="animate-spin" />}
+            {t('compose.saveAndApply')}
           </button>
         </div>
       </div>

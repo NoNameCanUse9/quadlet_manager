@@ -1,27 +1,45 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { RefreshCw, Play, Square, RotateCw, Pause, Trash2, Terminal, Plus } from 'lucide-react'
+import { RefreshCw, Play, Square, RotateCw, Pause, Trash2, Terminal, Plus, Upload, ArrowRightLeft } from 'lucide-react'
 import {
   useContainers, useContainerStats,
   useStartContainer, useStopContainer, useRestartContainer,
   usePauseContainer, useRemoveContainer, useExecCreate,
   useSetAutostart,
 } from '@/hooks/useContainers'
-import { useComposeProjects, useConvertCompose } from '@/hooks/useCompose'
+import { useConvertCompose } from '@/hooks/useCompose'
 import { ImportComposeDialog } from '@/components/compose/ImportComposeDialog'
 import { ConvertPreviewDialog } from '@/components/compose/ConvertPreviewDialog'
-import { ComposeProjectCard } from '@/components/compose/ComposeProjectCard'
+import { CreateContainerDialog } from '@/components/container/CreateContainerDialog'
 import { toast } from 'sonner'
 import type { QuadletConversion } from '@/api/client'
+
+function getContainerType(labels?: Record<string, string>): 'quadlet' | 'compose' | 'podman' {
+  if (labels?.['io.containers.systemd.unit']) return 'quadlet'
+  if (labels?.['com.docker.compose.project']) return 'compose'
+  return 'podman'
+}
+
+function getComposeProject(labels?: Record<string, string>): string | undefined {
+  return labels?.['com.docker.compose.project']
+}
+
+const typeColors = {
+  quadlet: 'bg-blue-500/10 text-blue-400',
+  compose: 'bg-purple-500/10 text-purple-400',
+  podman: 'bg-zinc-500/10 text-zinc-400',
+}
 
 export function ContainersPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [stateFilter, setStateFilter] = useState<string>('all')
+  const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [convertTarget, setConvertTarget] = useState<string | null>(null)
   const [conversions, setConversions] = useState<QuadletConversion[]>([])
 
@@ -35,8 +53,6 @@ export function ContainersPage() {
   const removeMut = useRemoveContainer()
   const execMut = useExecCreate()
   const setAutostartMut = useSetAutostart()
-
-  const { data: composeProjects } = useComposeProjects()
   const convertMut = useConvertCompose()
 
   const statsMap = new Map((stats?.containers || []).map(s => [s.id, s]))
@@ -45,7 +61,9 @@ export function ContainersPage() {
     const name = c.names?.[0] || ''
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) || c.id.includes(search)
     const matchesState = stateFilter === 'all' || c.state === stateFilter
-    return matchesSearch && matchesState
+    const type = getContainerType(c.labels)
+    const matchesSource = sourceFilter === 'all' || type === sourceFilter
+    return matchesSearch && matchesState && matchesSource
   })
 
   const handleAction = async (action: () => Promise<any>, label: string) => {
@@ -78,32 +96,7 @@ export function ContainersPage() {
 
   return (
     <div className="space-y-4">
-      {/* Compose Projects Section */}
-      <div className="border border-border rounded p-3">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-bold tracking-wider text-text-secondary uppercase">
-            {t('compose.title')}
-          </h3>
-          <button
-            onClick={() => setImportOpen(true)}
-            className="flex items-center gap-1 px-2 py-1 text-xs text-emerald-400 hover:bg-emerald-500/10 rounded"
-          >
-            <Plus size={12} />
-            {t('compose.import')}
-          </button>
-        </div>
-        {composeProjects && composeProjects.length > 0 ? (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {composeProjects.map(p => (
-              <ComposeProjectCard key={p.name} project={p} onConvert={handleConvert} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-text-secondary">{t('compose.noProjects')}</p>
-        )}
-      </div>
-
-      {/* Containers Section */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
           {t('sidebar.containers')}
@@ -126,8 +119,32 @@ export function ContainersPage() {
             <option value="exited">{t('containers.stateExited')}</option>
             <option value="paused">{t('containers.statePaused')}</option>
           </select>
+          <select
+            value={sourceFilter}
+            onChange={e => setSourceFilter(e.target.value)}
+            className="bg-surface-raised border border-border rounded px-2 py-1 text-xs text-text-primary"
+          >
+            <option value="all">{t('containers.sourceAll')}</option>
+            <option value="quadlet">{t('containers.typeQuadlet')}</option>
+            <option value="compose">{t('containers.typeCompose')}</option>
+            <option value="podman">{t('containers.typePodman')}</option>
+          </select>
           <button onClick={() => refetch()} className="p-1 text-text-secondary hover:text-text-primary">
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+          <button
+            onClick={() => setImportOpen(true)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-text-primary border border-border rounded hover:bg-surface-raised"
+          >
+            <Upload size={12} />
+            {t('compose.import')}
+          </button>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/30 rounded"
+          >
+            <Plus size={12} />
+            {t('containers.createContainer')}
           </button>
         </div>
       </div>
@@ -143,6 +160,7 @@ export function ContainersPage() {
           <thead>
             <tr className="bg-surface-raised text-text-secondary">
               <th className="px-3 py-2 text-left font-medium">{t('common.name')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('containers.source')}</th>
               <th className="px-3 py-2 text-left font-medium">{t('containers.image')}</th>
               <th className="px-3 py-2 text-left font-medium">{t('containers.status')}</th>
               <th className="px-3 py-2 text-right font-medium">{t('containers.cpu')}</th>
@@ -156,9 +174,18 @@ export function ContainersPage() {
               const name = c.names?.[0] || '-'
               const s = statsMap.get(c.id)
               const isRunning = c.state === 'running'
+              const type = getContainerType(c.labels)
+              const composeProject = getComposeProject(c.labels)
               return (
                 <tr key={c.id} className="hover:bg-surface-raised/50">
                   <td className="px-3 py-2 text-text-primary font-mono">{name}</td>
+                  <td className="px-3 py-2">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${typeColors[type]}`}>
+                      {type === 'quadlet' ? t('containers.typeQuadlet') :
+                       type === 'compose' ? `${t('containers.typeCompose')}${composeProject ? ` (${composeProject})` : ''}` :
+                       t('containers.typePodman')}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-text-secondary">{c.image}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] ${
@@ -176,14 +203,14 @@ export function ContainersPage() {
                     {s ? formatBytes(s.memUsage) : '-'}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {c.labels?.['io.containers.systemd.unit'] ? (
+                    {type === 'quadlet' ? (
                       <input
                         type="checkbox"
                         checked={false}
                         onChange={async (e) => {
                           try {
                             await setAutostartMut.mutateAsync({ id: c.id, enabled: e.target.checked })
-                            toast.success(e.target.checked ? t('compose.started') : t('compose.stopped'))
+                            toast.success(e.target.checked ? t('containers.autostartEnabled') : t('containers.autostartDisabled'))
                           } catch (err: any) {
                             toast.error(err.message)
                           }
@@ -221,6 +248,12 @@ export function ContainersPage() {
                         className="p-1 text-text-secondary hover:text-blue-400" title={t('containers.terminal') || 'Terminal'}>
                         <Terminal size={12} />
                       </button>
+                      {type === 'compose' && composeProject && (
+                        <button onClick={() => handleConvert(composeProject)}
+                          className="p-1 text-text-secondary hover:text-purple-400" title={t('compose.convert') || 'Convert'}>
+                          <ArrowRightLeft size={12} />
+                        </button>
+                      )}
                       <button onClick={() => setDeleteTarget(c.id)}
                         className="p-1 text-text-secondary hover:text-red-400" title={t('common.remove') || 'Remove'}>
                         <Trash2 size={12} />
@@ -230,9 +263,23 @@ export function ContainersPage() {
                 </tr>
               )
             })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-3 py-8 text-center text-text-secondary">
+                  {t('containers.noData')}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Create Container Dialog */}
+      <CreateContainerDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => refetch()}
+      />
 
       {/* Import Compose Dialog */}
       <ImportComposeDialog open={importOpen} onClose={() => setImportOpen(false)} />
@@ -243,6 +290,7 @@ export function ContainersPage() {
         onClose={() => { setConvertTarget(null); setConversions([]) }}
         conversions={conversions}
         projectName={convertTarget || ''}
+        onApplied={() => refetch()}
       />
 
       {/* Delete Confirmation Dialog */}
