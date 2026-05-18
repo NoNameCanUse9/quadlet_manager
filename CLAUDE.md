@@ -271,7 +271,7 @@ web/
 | `InitPage.tsx` | **首次初始化页面**。检查 `/api/v1/auth/init`，如果无管理员则显示创建表单。创建成功后跳转主页。 | /init | useAuth |
 | `LoginPage.tsx` | **登录页面**。用户名/密码表单，登录成功后跳转主页。 | /login | useAuth |
 | `DashboardPage.tsx` | **仪表盘**。显示容器统计卡片、单元状态概览。使用 WebSocket 接收实时更新。 | / (index) | useContainers, useWebSocket |
-| `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端、开机自启开关。顶部集成 Compose 项目管理（导入/启停/转换/删除）。 | /containers | useContainers, useCompose hooks |
+| `ContainersPage.tsx` | **容器管理页面**。统一列表展示所有容器（Quadlet/Compose/Podman），用类型 badge 区分来源。支持生命周期操作、开机自启开关、创建容器（Portainer 风格表单）、导入 Compose、转换 Compose 为 Quadlet。 | /containers | useContainers, useCompose hooks |
 | `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除。 | /images | useImages hooks |
 | `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除。 | /volumes | useVolumes hooks |
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
@@ -290,10 +290,10 @@ web/
 | `layout/AppHeader.tsx` | **顶部栏**。显示当前页面标题、用户信息、登出按钮。 | AppLayout |
 | `editor/QuadletEditor.tsx` | **CodeMirror 6 编辑器封装**。自定义 Quadlet INI 语法高亮、暗色主题。 | FilesPage |
 | `editor/ViewToggle.tsx` | **编辑器/表单模式切换**。 | FilesPage |
-| `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment 等字段的表单编辑，双向同步编辑器内容。 | FilesPage |
+| `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment/Labels 等字段的表单编辑，双向同步编辑器内容。导出 `wizardToQuadlet()` 和 `quadletToWizard()` 用于 Quadlet INI 生成/解析。 | FilesPage, CreateContainerDialog |
 | `compose/ImportComposeDialog.tsx` | **导入 Compose 弹窗**。输入项目名 + 粘贴 docker-compose.yml 内容。 | ContainersPage |
-| `compose/ComposeProjectCard.tsx` | **Compose 项目卡片**。显示项目名/状态/服务列表，支持启动/停止/转换/删除操作。 | ContainersPage |
-| `compose/ConvertPreviewDialog.tsx` | **转换预览弹窗**。显示转换后的 Quadlet 文件内容，支持 Tab 切换多文件、复制、警告提示。 | ContainersPage |
+| `compose/ConvertPreviewDialog.tsx` | **转换预览弹窗**。显示转换后的 Quadlet 文件内容，支持 Tab 切换多文件、复制、警告提示、保存并应用全部。 | ContainersPage |
+| `container/CreateContainerDialog.tsx` | **创建容器弹窗**（Portainer 风格）。基于 WizardData 表单填写 Image/Ports/Volumes/Env/Labels 等参数，生成 Quadlet .container 文件并部署。 | ContainersPage |
 | `AuthGuard.tsx` | **路由守卫**。未认证时跳转 /login，未初始化时跳转 /init。 | router |
 | `ErrorBoundary.tsx` | **错误边界**。捕获 React 渲染错误，显示降级 UI。 | router |
 | `ui/ErrorBanner.tsx` | 错误提示横幅组件。 | 各页面 |
