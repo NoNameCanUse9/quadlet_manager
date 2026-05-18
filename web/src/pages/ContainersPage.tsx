@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { RefreshCw, Play, Square, RotateCw, Pause, Trash2, Terminal } from 'lucide-react'
+import { RefreshCw, Play, Square, RotateCw, Pause, Trash2, Terminal, Plus } from 'lucide-react'
 import {
   useContainers, useContainerStats,
   useStartContainer, useStopContainer, useRestartContainer,
   usePauseContainer, useRemoveContainer, useExecCreate,
   useSetAutostart,
 } from '@/hooks/useContainers'
+import { useComposeProjects, useConvertCompose } from '@/hooks/useCompose'
+import { ImportComposeDialog } from '@/components/compose/ImportComposeDialog'
+import { ConvertPreviewDialog } from '@/components/compose/ConvertPreviewDialog'
+import { ComposeProjectCard } from '@/components/compose/ComposeProjectCard'
 import { toast } from 'sonner'
+import type { QuadletConversion } from '@/api/client'
 
 export function ContainersPage() {
   const { t } = useTranslation()
@@ -16,6 +21,9 @@ export function ContainersPage() {
   const [search, setSearch] = useState('')
   const [stateFilter, setStateFilter] = useState<string>('all')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [convertTarget, setConvertTarget] = useState<string | null>(null)
+  const [conversions, setConversions] = useState<QuadletConversion[]>([])
 
   const { data: containersData, isLoading, error, refetch } = useContainers()
   const containers = containersData ?? []
@@ -27,6 +35,9 @@ export function ContainersPage() {
   const removeMut = useRemoveContainer()
   const execMut = useExecCreate()
   const setAutostartMut = useSetAutostart()
+
+  const { data: composeProjects } = useComposeProjects()
+  const convertMut = useConvertCompose()
 
   const statsMap = new Map((stats?.containers || []).map(s => [s.id, s]))
 
@@ -55,8 +66,44 @@ export function ContainersPage() {
     }
   }
 
+  const handleConvert = async (name: string) => {
+    try {
+      const result = await convertMut.mutateAsync(name)
+      setConversions(result)
+      setConvertTarget(name)
+    } catch (e: any) {
+      toast.error(e.message)
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {/* Compose Projects Section */}
+      <div className="border border-border rounded p-3">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold tracking-wider text-text-secondary uppercase">
+            {t('compose.title')}
+          </h3>
+          <button
+            onClick={() => setImportOpen(true)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-emerald-400 hover:bg-emerald-500/10 rounded"
+          >
+            <Plus size={12} />
+            {t('compose.import')}
+          </button>
+        </div>
+        {composeProjects && composeProjects.length > 0 ? (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {composeProjects.map(p => (
+              <ComposeProjectCard key={p.name} project={p} onConvert={handleConvert} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-text-secondary">{t('compose.noProjects')}</p>
+        )}
+      </div>
+
+      {/* Containers Section */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold tracking-wider text-text-primary uppercase">
           {t('sidebar.containers')}
@@ -187,6 +234,18 @@ export function ContainersPage() {
         </table>
       </div>
 
+      {/* Import Compose Dialog */}
+      <ImportComposeDialog open={importOpen} onClose={() => setImportOpen(false)} />
+
+      {/* Convert Preview Dialog */}
+      <ConvertPreviewDialog
+        open={convertTarget !== null}
+        onClose={() => { setConvertTarget(null); setConversions([]) }}
+        conversions={conversions}
+        projectName={convertTarget || ''}
+      />
+
+      {/* Delete Confirmation Dialog */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-surface border border-border rounded-lg p-4 max-w-sm w-full mx-4">
