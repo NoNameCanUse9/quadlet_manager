@@ -220,6 +220,7 @@ web/
 | `useVolumes.ts` | 存储卷查询 hooks。 | VolumesPage |
 | `useNetworks.ts` | 网络查询 hooks。 | NetworksPage |
 | `useWebSocket.ts` | WebSocket 连接 hook。自动重连，解析消息类型。 | DashboardPage |
+| `useCompose.ts` | Compose 项目 hooks。`useComposeProjects()` 获取列表，`useComposeUp/Down()` 启停，`useConvertCompose()` 转换。 | ContainersPage |
 
 ### 3.4 pages/ — 页面组件
 
@@ -229,7 +230,7 @@ web/
 | `LoginPage.tsx` | **登录页面**。用户名/密码表单，登录成功后跳转主页。 | /login | useAuth |
 | `DashboardPage.tsx` | **仪表盘**。显示容器统计卡片、单元状态概览。使用 WebSocket 接收实时更新。 | / (index) | useContainers, useWebSocket |
 | `UnitsPage.tsx` | **单元管理页面**。列出 Quadlet 管理的 systemd 单元，支持启动/停止/重启/启用/禁用操作。 | /units | useUnits hooks |
-| `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端。 | /containers | useContainers hooks |
+| `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端。顶部集成 Compose 项目管理（导入/启停/转换/删除）。 | /containers | useContainers, useCompose hooks |
 | `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除。 | /images | useImages hooks |
 | `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除。 | /volumes | useVolumes hooks |
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
@@ -249,6 +250,9 @@ web/
 | `editor/QuadletEditor.tsx` | **CodeMirror 6 编辑器封装**。自定义 Quadlet INI 语法高亮、暗色主题。 | FilesPage |
 | `editor/ViewToggle.tsx` | **编辑器/表单模式切换**。 | FilesPage |
 | `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment 等字段的表单编辑，双向同步编辑器内容。 | FilesPage |
+| `compose/ImportComposeDialog.tsx` | **导入 Compose 弹窗**。输入项目名 + 粘贴 `docker-compose.yml` 内容。 | ContainersPage |
+| `compose/ComposeProjectCard.tsx` | **Compose 项目卡片**。显示项目名/状态/服务列表，支持启动/停止/转换/删除操作。 | ContainersPage |
+| `compose/ConvertPreviewDialog.tsx` | **转换预览弹窗**。显示转换后的 Quadlet 文件内容，支持 Tab 切换多文件、复制、警告提示。 | ContainersPage |
 | `AuthGuard.tsx` | **路由守卫**。未认证时跳转 /login，未初始化时跳转 /init。 | router |
 | `ErrorBoundary.tsx` | **错误边界**。捕获 React 渲染错误，显示降级 UI。 | router |
 | `ui/ErrorBanner.tsx` | 错误提示横幅组件。 | 各页面 |

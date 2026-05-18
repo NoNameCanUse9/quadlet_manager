@@ -1,5 +1,24 @@
 # 变更日志
 
+## 2026-05-19 — Docker Compose UI 支持 + 文件后缀选择器
+
+### 新增
+- **Compose 项目 UI 界面 (commit 4c2bd8)**:
+  - 新增 `ImportComposeDialog` 弹窗，支持通过输入项目名并粘贴 `docker-compose.yml` 导入 Compose 项目。
+  - 新增 `ComposeProjectCard` 卡片组件，展示项目状态及服务列表，并支持 Up (启动)、Down (停止)、Delete (删除) 动作。
+  - 新增 `ConvertPreviewDialog` 预览弹窗，展示将 Compose 转换为 Quadlet 文件后的效果，支持多服务 Tab 切换、复制、警告说明。
+  - 在 `ContainersPage` 容器页面顶部集成 Compose 项目管理面板。
+  - 新增 `useCompose.ts` 的 React TanStack Query Hooks 用于管理 Compose 相关的后端接口调用。
+- **新建文件后缀下拉选择框 (commit 0f1c0b)**:
+  - 在 `FilesPage` 文件页面的新建文件对话框中，将手动输入完整文件名改为 **文件名输入框 + 后缀下拉选择框** 的组合。
+  - 默认选择器选中 `.container`，下拉框包含全部 6 种合法的后缀名：`.container`、`.volume`、`.network`、`.pod`、`.kube`、`.image`。
+
+### 修复
+- **i18n 全面补全**:
+  - 在 `en.json` 与 `zh.json` 中完整补全了 Compose UI 相关词汇、容器常用 CPU% / 内存等状态的中英文对照翻译。
+
+---
+
 ## 2026-05-18 — 安全加固 + 多租户支持
 
 ### 新增
