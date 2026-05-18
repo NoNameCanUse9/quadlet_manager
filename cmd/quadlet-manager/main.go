@@ -112,6 +112,7 @@ func main() {
 	volumeSvc := service.NewVolumeService(podmanProvider)
 	networkSvc := service.NewNetworkService(podmanProvider)
 	backupSvc := service.NewBackupService(quadletFS, settingsStore)
+	composeProvider := provider.NewComposeProviderImpl(cfg.QuadletDir)
 
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
@@ -150,6 +151,7 @@ func main() {
 	statsH := handler.NewStatsHandler(containerSvc, hub)
 	authH := handler.NewAuthHandler(authSvc)
 	settingsH := handler.NewSettingsHandler(authSvc)
+	composeH := handler.NewComposeHandler(composeProvider)
 
 	// Setup router
 	r := gin.Default()
@@ -216,6 +218,16 @@ func main() {
 		protected.GET("/containers/:id/inspect", containerH.InspectContainer)
 		protected.GET("/containers/:id/autostart", containerH.GetAutostart)
 		protected.POST("/containers/:id/autostart", containerH.SetAutostart)
+
+		// Compose
+		protected.GET("/compose", composeH.ListProjects)
+		protected.POST("/compose/import", composeH.ImportProject)
+		protected.DELETE("/compose/:name", composeH.RemoveProject)
+		protected.POST("/compose/:name/up", composeH.Up)
+		protected.POST("/compose/:name/down", composeH.Down)
+		protected.GET("/compose/:name/ps", composeH.Ps)
+		protected.GET("/compose/:name/logs", composeH.Logs)
+		protected.GET("/compose/:name/convert", composeH.ConvertToQuadlet)
 
 		// Exec
 		protected.POST("/containers/:id/exec", execH.ExecCreate)
