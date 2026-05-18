@@ -2,7 +2,6 @@ import { NavLink, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
-  Server,
   Container,
   HardDrive,
   Database,
@@ -19,7 +18,6 @@ import { useAuth } from '@/store/useAuth'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, labelKey: 'sidebar.dashboard' },
-  { to: '/units', icon: Server, labelKey: 'units.title' },
   { to: '/containers', icon: Container, labelKey: 'sidebar.containers' },
   { to: '/images', icon: HardDrive, labelKey: 'sidebar.images' },
   { to: '/volumes', icon: Database, labelKey: 'sidebar.volumes' },

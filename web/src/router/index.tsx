@@ -7,7 +7,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const InitPage = lazy(() => import('@/pages/InitPage').then(m => ({ default: m.InitPage })))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
-const UnitsPage = lazy(() => import('@/pages/UnitsPage').then(m => ({ default: m.UnitsPage })))
 const ContainersPage = lazy(() => import('@/pages/ContainersPage').then(m => ({ default: m.ContainersPage })))
 const ImagesPage = lazy(() => import('@/pages/ImagesPage').then(m => ({ default: m.ImagesPage })))
 const VolumesPage = lazy(() => import('@/pages/VolumesPage').then(m => ({ default: m.VolumesPage })))
@@ -40,7 +39,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
-      { path: 'units', element: <SuspenseWrapper><UnitsPage /></SuspenseWrapper> },
+      { path: 'units', element: <Navigate to="/files" replace /> },
       { path: 'containers', element: <SuspenseWrapper><ContainersPage /></SuspenseWrapper> },
       { path: 'images', element: <SuspenseWrapper><ImagesPage /></SuspenseWrapper> },
       { path: 'volumes', element: <SuspenseWrapper><VolumesPage /></SuspenseWrapper> },

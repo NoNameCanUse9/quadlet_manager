@@ -205,7 +205,7 @@ web/
 |------|------|-----------|----------|
 | `useAuth.ts` | **认证状态**。token 存 localStorage。提供 login/logout/initAdmin/checkInit/fetchMe 方法。首次访问时 checkInit 判断跳转到 InitPage 还是 LoginPage。 | token, user, initialized, loading, error | AuthGuard, LoginPage, InitPage, AppSidebar |
 | `useApp.ts` | **应用状态**。files (Quadlet 文件列表), systemInfo (系统信息)。 | files, systemInfo, loading | FilesPage, AppSidebar |
-| `useUnits.ts` | **单元状态**。fetchUnits 从 API 获取单元列表。 | units, loading, error | UnitsPage |
+| `useUnits.ts` | **单元状态**。fetchUnits 从 API 获取单元列表。 | units, loading, error | FilesPage |
 | `useContainers.ts` | **容器状态**。fetchContainers + fetchStats。 | containers, stats, loading, error | ContainersPage, DashboardPage |
 
 **注意**: Zustand store 用于全局状态，TanStack Query hooks 用于数据获取和缓存。两者并存。
@@ -214,7 +214,7 @@ web/
 
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
-| `useUnits.ts` | 单元查询/变更 hooks。`useUnits()` 获取列表，`useStartUnit()` 等 mutation hooks。 | UnitsPage |
+| `useUnits.ts` | 单元查询/变更 hooks。`useUnits()` 获取列表，`useStartUnit()` 等 mutation hooks。 | FilesPage |
 | `useContainers.ts` | 容器查询 hooks。 | ContainersPage |
 | `useImages.ts` | 镜像查询 hooks。 | ImagesPage |
 | `useVolumes.ts` | 存储卷查询 hooks。 | VolumesPage |
@@ -229,12 +229,11 @@ web/
 | `InitPage.tsx` | **首次初始化页面**。检查 `/api/v1/auth/init`，如果无管理员则显示创建表单。创建成功后跳转主页。 | /init | useAuth |
 | `LoginPage.tsx` | **登录页面**。用户名/密码表单，登录成功后跳转主页。 | /login | useAuth |
 | `DashboardPage.tsx` | **仪表盘**。显示容器统计卡片、单元状态概览。使用 WebSocket 接收实时更新。 | / (index) | useContainers, useWebSocket |
-| `UnitsPage.tsx` | **单元管理页面**。列出 Quadlet 管理的 systemd 单元，支持启动/停止/重启/启用/禁用操作。 | /units | useUnits hooks |
 | `ContainersPage.tsx` | **容器管理页面**。列出所有容器，支持生命周期操作（启动/停止/暂停/删除）、查看日志、打开终端。顶部集成 Compose 项目管理（导入/启停/转换/删除）。 | /containers | useContainers, useCompose hooks |
 | `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除。 | /images | useImages hooks |
 | `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除。 | /volumes | useVolumes hooks |
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
-| `FilesPage.tsx` | **Quadlet 文件编辑器**。集成 CodeMirror 6 编辑器，支持语法高亮、实时验证、保存/应用。包含 ConfigWizard 表单模式。 | /files | api client |
+| `FilesPage.tsx` | **Quadlet 编排控制中心**（主路由 `/files`）。将新建、编辑器（CodeMirror）、向导表单（ConfigWizard）与 Systemd 单元状态及生命周期控制（运行监控、启动/停止/重启、开机自启、一键部署）深度合二为一的大一统交互面板。 | /files | useApp, useUnits |
 | `TerminalPage.tsx` | **Web 终端**。xterm.js 终端模拟器，通过 WebSocket 连接到 Podman exec 会话。 | /containers/:id/exec/:exec_id | api client |
 | `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。 | /settings | api client |
 | `AdminUsersPage.tsx` | **用户管理页面**（admin only）。列出用户，支持创建/删除/修改角色/重置密码。 | /admin/users | api client |

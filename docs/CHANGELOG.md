@@ -1,8 +1,13 @@
 # 变更日志
 
-## 2026-05-19 — Docker Compose UI 支持 + 文件后缀选择器
+## 2026-05-19 — Quadlet 编排中心大一统 + Docker Compose UI 支持 + 文件后缀选择器
 
 ### 新增
+- **Quadlet 编排控制中心大一统**:
+  - 将原先独立的 `UnitsPage`（服务控制）与 `FilesPage`（配置编辑）**深度合并**为统一的 **"Quadlet" 编排中心**。
+  - 在新建/编辑 Quadlet 文件时，直接在工作区顶部提供实时的 Systemd 服务状态看板（支持运行状态、活动子状态的实时同步）。
+  - 集成了完整的 Systemd 单元生命周期管理功能（一键启动、停止、重启、开机自启开关），若文件未部署则提供一键 Deploy 按钮。
+  - 精简了侧边栏与路由设计，删除了冗余的 单元服务 菜单项，任何对旧版 `/units` 的访问都会自动 301 重定向至新版 Quadlet 编排中心。
 - **Compose 项目 UI 界面 (commit 4c2bd8)**:
   - 新增 `ImportComposeDialog` 弹窗，支持通过输入项目名并粘贴 `docker-compose.yml` 导入 Compose 项目。
   - 新增 `ComposeProjectCard` 卡片组件，展示项目状态及服务列表，并支持 Up (启动)、Down (停止)、Delete (删除) 动作。
@@ -11,7 +16,7 @@
   - 新增 `useCompose.ts` 的 React TanStack Query Hooks 用于管理 Compose 相关的后端接口调用。
 - **新建文件后缀下拉选择框 (commit 0f1c0b)**:
   - 在 `FilesPage` 文件页面的新建文件对话框中，将手动输入完整文件名改为 **文件名输入框 + 后缀下拉选择框** 的组合。
-  - 默认选择器选中 `.container`，下拉框包含全部 6 种合法的后缀名：`.container`、`.volume`、`.network`、`.pod`、`.kube`、`.image`。
+  - 默认选择器选中 `.container`，下拉框包含全部 6 种合法的后缀名：`.container`、`.volume`、`.network`、`.pod` 、`.kube`、`.image`。
 
 ### 修复
 - **i18n 全面补全**:

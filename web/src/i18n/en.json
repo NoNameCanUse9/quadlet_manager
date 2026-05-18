@@ -117,7 +117,7 @@
     "removeConfirm": "Remove network \"{{name}}\"?"
   },
   "files": {
-    "title": "Quadlet Files",
+    "title": "Quadlet",
     "create": "Create New",
     "filename": "Filename",
     "content": "Content",
@@ -129,7 +129,22 @@
     "editor": "Editor",
     "selectFile": "Select a file to edit",
     "valid": "Valid",
-    "invalid": "Invalid"
+    "invalid": "Invalid",
+    "type": "Type",
+    "status": "Status",
+    "substate": "Systemd Substate",
+    "noData": "No Quadlet configurations found. Click 'Create' to get started!",
+    "createTitle": "Create New Quadlet",
+    "backToList": "Back to List",
+    "systemdService": "Systemd Service",
+    "activeSubstate": "Active Substate",
+    "deploy": "Deploy & Start",
+    "deployAndStart": "Deploy & Start Service",
+    "notDeployed": "Not deployed to systemd yet. Click 'Deploy & Start' to apply",
+    "name": "Name",
+    "actionSuccess": "Action executed successfully",
+    "confirmDelete": "Are you sure you want to delete this Quadlet file?",
+    "actions": "Actions"
   },
   "wizard": {
     "image": "Image",
@@ -186,5 +201,19 @@
     "deleteConfirm": "Delete this user?",
     "roleUser": "User",
     "roleAdmin": "Admin"
+  },
+  "backup": {
+    "title": "Backup & Restore",
+    "exportTitle": "Export Backup",
+    "exportDesc": "Download all quadlet files and settings as a tar.gz archive.",
+    "exportBtn": "Export",
+    "importTitle": "Import Backup",
+    "importDesc": "Restore quadlet files from a previously exported backup.",
+    "importBtn": "Import",
+    "importing": "Importing...",
+    "exportSuccess": "Backup exported",
+    "exportFailed": "Export failed",
+    "importSuccess": "Backup restored",
+    "importFailed": "Import failed"
   }
 }
