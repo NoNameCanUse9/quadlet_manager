@@ -35,6 +35,7 @@ export function FilesPage() {
   } | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [newFilename, setNewFilename] = useState('')
+  const [newExtension, setNewExtension] = useState('.container')
 
   useEffect(() => {
     fetchFiles()
@@ -120,13 +121,15 @@ export function FilesPage() {
   }
 
   const handleCreate = async () => {
-    if (!newFilename.trim()) return
+    const baseName = newFilename.trim()
+    if (!baseName) return
+    const fullName = baseName.endsWith(newExtension) ? baseName : `${baseName}${newExtension}`
     try {
-      await api.createFile(newFilename.trim(), '')
+      await api.createFile(fullName, '')
       setShowCreate(false)
       setNewFilename('')
       await fetchFiles()
-      selectFile(newFilename.trim())
+      selectFile(fullName)
       toast.success('File created')
     } catch (e) {
       toast.error((e as Error).message)
@@ -159,15 +162,36 @@ export function FilesPage() {
         </div>
 
         {showCreate && (
-          <div className="px-2 py-2 border-b border-border">
-            <input
-              type="text"
-              value={newFilename}
-              onChange={(e) => setNewFilename(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              placeholder="nginx.container"
-              className="w-full bg-surface-raised border border-border rounded px-2 py-1 text-[10px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
-            />
+          <div className="px-2 py-2 border-b border-border space-y-1.5">
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={newFilename}
+                onChange={(e) => setNewFilename(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                placeholder="nginx"
+                className="flex-1 min-w-0 bg-surface-raised border border-border rounded px-2 py-1 text-[10px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                autoFocus
+              />
+              <select
+                value={newExtension}
+                onChange={(e) => setNewExtension(e.target.value)}
+                className="bg-surface-raised border border-border rounded px-1 py-1 text-[10px] text-text-primary focus:outline-none focus:border-accent font-mono cursor-pointer"
+              >
+                <option value=".container">.container</option>
+                <option value=".volume">.volume</option>
+                <option value=".network">.network</option>
+                <option value=".pod">.pod</option>
+                <option value=".kube">.kube</option>
+                <option value=".image">.image</option>
+              </select>
+            </div>
+            <button
+              onClick={handleCreate}
+              className="w-full py-1 text-[10px] font-semibold bg-accent text-background rounded hover:bg-accent/90 transition-all duration-200"
+            >
+              {t('common.create')}
+            </button>
           </div>
         )}
 
