@@ -2,7 +2,19 @@
 *.exe
 *.test
 *.out
+*.db
 /web/node_modules/
 /web/dist/
-/.superpowers/
+/tmp/
+
+# 构建产物
 /quadlet-manager
+
+# Claude Code 工具配置
+.agents/
+.claude/
+skills-lock.json
+
+# Superpowers 技能文件
+.superpowers/
+docs/superpowers/
