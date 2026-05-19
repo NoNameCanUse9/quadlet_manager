@@ -29,7 +29,15 @@ func (s *SettingsStore) GetByUserID(userID int64) (*model.UserSettings, error) {
 		if err2 != nil {
 			return nil, fmt.Errorf("create settings: %w", err2)
 		}
-		return s.GetByUserID(userID)
+		// Return defaults directly instead of recursive query
+		st.UserID = userID
+		st.Language = "en"
+		st.Theme = "dark"
+		st.ItemsPerPage = 20
+		st.AutoRefreshSeconds = 30
+		st.DefaultRestartPolicy = "always"
+		st.NotifyOnFailure = true
+		return st, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get settings: %w", err)

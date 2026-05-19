@@ -31,8 +31,10 @@ func (p *SocketPodmanProvider) Connect(_ context.Context) error {
 			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 				return net.Dial("unix", p.socketPath)
 			},
+			MaxIdleConns:        10,
+			MaxIdleConnsPerHost: 5,
+			IdleConnTimeout:     90 * time.Second,
 		},
-		Timeout: 30 * time.Second,
 	}
 
 	// Detect API version
@@ -133,7 +135,7 @@ func (p *SocketPodmanProvider) GetContainerLogs(_ context.Context, id string, ta
 		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024)) // 10MB cap
 	if err != nil {
 		return nil, err
 	}

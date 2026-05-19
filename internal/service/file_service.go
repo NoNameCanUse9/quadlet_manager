@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/choken/quadlet-manager/internal/model"
 	"github.com/choken/quadlet-manager/internal/parser"
@@ -14,11 +16,17 @@ type SettingsLookup interface {
 	GetByUserID(userID int64) (*model.UserSettings, error)
 }
 
+type dirCacheEntry struct {
+	dir       string
+	expiresAt time.Time
+}
+
 type FileService struct {
 	defaultFS provider.QuadletFS
 	systemd   provider.SystemdProvider
 	settings  SettingsLookup
 	defaultDir string
+	dirCache   sync.Map // map[int64]dirCacheEntry
 }
 
 func NewFileService(fs provider.QuadletFS, systemd provider.SystemdProvider, settings SettingsLookup, defaultDir string) *FileService {
@@ -27,7 +35,14 @@ func NewFileService(fs provider.QuadletFS, systemd provider.SystemdProvider, set
 
 func (s *FileService) resolveFS(ctx context.Context, userID int64) provider.QuadletFS {
 	if s.settings != nil && userID > 0 {
+		if cached, ok := s.dirCache.Load(userID); ok {
+			entry := cached.(dirCacheEntry)
+			if time.Now().Before(entry.expiresAt) && entry.dir != "" {
+				return provider.NewQuadletFSImpl(entry.dir)
+			}
+		}
 		if st, err := s.settings.GetByUserID(userID); err == nil && st.QuadletDir != "" {
+			s.dirCache.Store(userID, dirCacheEntry{dir: st.QuadletDir, expiresAt: time.Now().Add(10 * time.Second)})
 			return provider.NewQuadletFSImpl(st.QuadletDir)
 		}
 	}

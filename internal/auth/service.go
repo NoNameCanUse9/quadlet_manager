@@ -38,16 +38,12 @@ func (s *Service) Register(username, password, role string) error {
 }
 
 func (s *Service) Login(username, password string) (string, *model.User, error) {
-	hash, _, err := s.users.GetPasswordHashByUsername(username)
+	user, hash, err := s.users.GetByUsernameWithHash(username)
 	if err != nil {
 		return "", nil, errors.New("invalid credentials")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
 		return "", nil, errors.New("invalid credentials")
-	}
-	user, err := s.users.GetByUsername(username)
-	if err != nil {
-		return "", nil, err
 	}
 	token, err := CreateToken(s.secret, user.ID, user.Username, user.Role, 24*time.Hour)
 	if err != nil {

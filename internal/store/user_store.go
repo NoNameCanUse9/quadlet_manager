@@ -55,6 +55,19 @@ func (s *UserStore) GetPasswordHashByUsername(username string) (string, int64, e
 	return hash, id, err
 }
 
+// GetByUsernameWithHash returns full user info including password hash in a single query.
+func (s *UserStore) GetByUsernameWithHash(username string) (*model.User, string, error) {
+	u := &model.User{}
+	var hash string
+	err := s.db.QueryRow(
+		"SELECT id, username, role, created_at, password FROM users WHERE username = ?", username,
+	).Scan(&u.ID, &u.Username, &u.Role, &u.CreatedAt, &hash)
+	if err != nil {
+		return nil, "", fmt.Errorf("user %s: %w", username, err)
+	}
+	return u, hash, nil
+}
+
 func (s *UserStore) ListAll() ([]model.User, error) {
 	rows, err := s.db.Query("SELECT id, username, role, created_at FROM users ORDER BY id")
 	if err != nil {

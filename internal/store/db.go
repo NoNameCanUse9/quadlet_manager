@@ -20,10 +20,12 @@ func (l *noLog) Printf(format string, v ...interface{}) {}
 func (l *noLog) Verbose() bool                          { return false }
 
 func NewDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn+"?_journal_mode=WAL&_foreign_keys=on")
+	db, err := sql.Open("sqlite3", dsn+"?_journal_mode=WAL&_foreign_keys=on&_busy_timeout=5000&_synchronous=NORMAL")
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(1) // SQLite single-writer model
+	db.SetMaxIdleConns(1)
 
 	if err := runMigrations(db); err != nil {
 		db.Close()

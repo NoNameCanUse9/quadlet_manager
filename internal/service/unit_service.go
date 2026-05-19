@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/choken/quadlet-manager/internal/model"
 	"github.com/choken/quadlet-manager/internal/provider"
@@ -15,6 +17,7 @@ type UnitService struct {
 	quadlet    provider.QuadletFS
 	settings   SettingsLookup
 	defaultDir string
+	dirCache   sync.Map // map[int64]dirCacheEntry
 }
 
 func NewUnitService(systemd provider.SystemdProvider, quadlet provider.QuadletFS, settings SettingsLookup, defaultDir string) *UnitService {
@@ -23,7 +26,14 @@ func NewUnitService(systemd provider.SystemdProvider, quadlet provider.QuadletFS
 
 func (s *UnitService) resolveFS(ctx context.Context, userID int64) provider.QuadletFS {
 	if s.settings != nil && userID > 0 {
+		if cached, ok := s.dirCache.Load(userID); ok {
+			entry := cached.(dirCacheEntry)
+			if time.Now().Before(entry.expiresAt) && entry.dir != "" {
+				return provider.NewQuadletFSImpl(entry.dir)
+			}
+		}
 		if st, err := s.settings.GetByUserID(userID); err == nil && st.QuadletDir != "" {
+			s.dirCache.Store(userID, dirCacheEntry{dir: st.QuadletDir, expiresAt: time.Now().Add(10 * time.Second)})
 			return provider.NewQuadletFSImpl(st.QuadletDir)
 		}
 	}
@@ -82,9 +92,6 @@ func (s *UnitService) GetUnitStatus(ctx context.Context, name string) (*model.Un
 }
 
 func (s *UnitService) StartUnit(ctx context.Context, name string) error {
-	if err := s.systemd.DaemonReload(ctx); err != nil {
-		return fmt.Errorf("daemon reload: %w", err)
-	}
 	return s.systemd.StartUnit(ctx, name)
 }
 

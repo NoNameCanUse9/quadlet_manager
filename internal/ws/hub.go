@@ -17,7 +17,7 @@ import (
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		return origin == "" || origin == "http://localhost:9090" || origin == "http://localhost:8080"
+		return origin == "" || origin == "http://localhost:9090" || origin == "http://localhost:10000" || origin == "http://localhost:8080"
 	},
 }
 
@@ -54,9 +54,18 @@ func (h *Hub) SetJWTSecret(secret []byte) {
 	h.jwtSecret = secret
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			// Graceful shutdown: close all client connections
+			h.mu.Lock()
+			for client := range h.clients {
+				close(client.send)
+				delete(h.clients, client)
+			}
+			h.mu.Unlock()
+			return
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
@@ -218,7 +227,8 @@ func (h *Hub) StartAlertBroadcaster(ctx context.Context, interval time.Duration,
 				if err != nil {
 					continue
 				}
-				currentFailed := make(map[string]bool)
+				// Pre-allocate with hint from previous size
+				currentFailed := make(map[string]bool, len(previousFailed))
 				for _, u := range units {
 					if u.ActiveState == "failed" {
 						currentFailed[u.Name] = true
@@ -229,6 +239,10 @@ func (h *Hub) StartAlertBroadcaster(ctx context.Context, interval time.Duration,
 							})
 						}
 					}
+				}
+				// Swap and clear for reuse
+				for k := range previousFailed {
+					delete(previousFailed, k)
 				}
 				previousFailed = currentFailed
 			}

@@ -23,6 +23,7 @@ import (
 	"github.com/choken/quadlet-manager/internal/updater"
 	"github.com/choken/quadlet-manager/internal/version"
 	"github.com/choken/quadlet-manager/internal/ws"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 )
 
@@ -119,15 +120,17 @@ func main() {
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
 	hub.SetJWTSecret(secret)
-	go hub.Run()
+	hubCtx, hubCancel := context.WithCancel(context.Background())
+	defer hubCancel()
+	go hub.Run(hubCtx)
 
 	// Start stats broadcaster (every 5 seconds)
-	hub.StartStatsBroadcaster(context.Background(), 5*time.Second, func(ctx context.Context) (interface{}, error) {
+	hub.StartStatsBroadcaster(hubCtx, 5*time.Second, func(ctx context.Context) (interface{}, error) {
 		return containerSvc.GetAllStats(ctx)
 	})
 
 	// Start alert broadcaster (every 5 seconds) — detects failed units
-	hub.StartAlertBroadcaster(context.Background(), 5*time.Second, func(ctx context.Context) ([]ws.UnitStatus, error) {
+	hub.StartAlertBroadcaster(hubCtx, 5*time.Second, func(ctx context.Context) ([]ws.UnitStatus, error) {
 		units, err := unitSvc.ListUnits(ctx, 0)
 		if err != nil {
 			return nil, err
@@ -138,6 +141,10 @@ func main() {
 		}
 		return result, nil
 	})
+
+	// Initialize update checker
+	updateChecker := updater.NewChecker(version.Version, "choken/quadlet-manager")
+	updateChecker.StartPeriodicCheck(context.Background())
 
 	// Initialize handlers
 	systemH := handler.NewSystemHandler(cfg, unitSvc)
@@ -156,14 +163,16 @@ func main() {
 	settingsH := handler.NewSettingsHandler(authSvc)
 	composeH := handler.NewComposeHandler(composeProvider)
 
-	// Initialize update checker
-	updateChecker := updater.NewChecker(version.Version, "choken/quadlet-manager")
-	updateChecker.StartPeriodicCheck(context.Background())
 
 	// Setup router
 	r := gin.Default()
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())
+
+	// Register pprof profiling endpoints in development mode
+	if cfg.DevMode {
+		pprof.Register(r)
+	}
 
 	// Public auth routes (no JWT required)
 	authGroup := r.Group("/api/v1/auth")
