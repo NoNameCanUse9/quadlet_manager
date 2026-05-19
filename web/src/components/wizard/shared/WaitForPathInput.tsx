@@ -7,7 +7,6 @@ interface Props {
   items: WaitForPath[]
   onAdd: (item: WaitForPath) => void
   onRemove: (index: number) => void
-  onUpdate: (index: number, item: WaitForPath) => void
   placeholder?: string
   addPlaceholder?: string
   strictLabel?: string
@@ -17,7 +16,6 @@ export function WaitForPathInput({
   items,
   onAdd,
   onRemove,
-  onUpdate,
   placeholder = 'Add path...',
   addPlaceholder = '/data',
   strictLabel = 'Strict',

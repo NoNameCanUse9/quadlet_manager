@@ -55,11 +55,6 @@ export function ServicePanel({ data, onChange }: Props) {
           items={data.waitForPaths}
           onAdd={(item) => onChange({ waitForPaths: [...data.waitForPaths, item] })}
           onRemove={(i) => onChange({ waitForPaths: data.waitForPaths.filter((_, idx) => idx !== i) })}
-          onUpdate={(i, item) => {
-            const newPaths = [...data.waitForPaths]
-            newPaths[i] = item
-            onChange({ waitForPaths: newPaths })
-          }}
           placeholder={t('wizard.addPath') || 'Add path'}
           strictLabel={t('wizard.strictMount')}
         />
