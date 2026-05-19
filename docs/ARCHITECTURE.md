@@ -61,7 +61,7 @@ internal/
 | 文件 | 作用 | 导出 | 被谁使用 |
 |------|------|------|----------|
 | `jwt.go` | JWT token 的生成 (`CreateToken`) 和验证 (`ValidateToken`)。使用 HMAC-SHA256，token 包含 user_id/username/role，有效期 24 小时。 | `CreateToken()`, `ValidateToken()`, `Claims` | service.go, middleware/auth.go, ws/hub.go |
-| `service.go` | 认证业务逻辑。`Register()` 注册用户（bcrypt 哈希密码），`Login()` 验证密码并返回 JWT，`HasAdmin()` 检查是否已有管理员。内部持有 `UserStore` 和 `SettingsStore`。 | `Service`, `NewService()` | handler/auth_handler.go, handler/settings_handler.go, main.go |
+| `service.go` | 认证业务逻辑。`Register()` 注册用户（bcrypt 哈希密码），`Login()` 验证密码并返回 JWT（单条 SQL 查询），`HasAdmin()` 检查是否已有管理员。内部持有 `UserStore` 和 `SettingsStore`。 | `Service`, `NewService()` | handler/auth_handler.go, handler/settings_handler.go, main.go |
 | `jwt_test.go` | 测试 token 生成/验证、过期、错误密钥。 | - | - |
 | `service_test.go` | 测试注册/登录流程、重复用户、密码错误。 | - | - |
 
@@ -86,7 +86,7 @@ internal/
 | `systemd.go` | **SystemdProvider 接口定义**。声明 Connect/Close/IsRootless、DaemonReload/StartUnit/StopUnit/RestartUnit/EnableUnit/DisableUnit、ListUnits/GetUnitStatus、SubscribeUnitChanges。 | `SystemdProvider` 接口 | service/unit_service.go |
 | `systemd_dbus.go` | **D-Bus 实现**。rootless 用 `dbus.NewUserConnectionContext`，rootful 用 `dbus.NewSystemConnectionContext`。通过 `org.freedesktop.systemd1.Manager` 调用 systemd。 | `DBusSystemdProvider`, `NewDBusSystemdProvider()` | main.go |
 | `podman.go` | **PodmanProvider 接口定义**。声明容器/镜像/卷/网络的 CRUD 操作，以及 ExecCreate/ExecAttach（Web 终端）。 | `PodmanProvider` 接口 | service/container_service.go 等 |
-| `podman_socket.go` | **Podman Socket 实现**。通过 HTTP over Unix Socket 调用 Podman libpod API (v5.0.0)。不依赖 CGO。 | `SocketPodmanProvider`, `NewSocketPodmanProvider()` | main.go |
+| `podman_socket.go` | **Podman Socket 实现**。通过 HTTP over Unix Socket 调用 Podman libpod API (v5.0.0)。不依赖 CGO。配置连接池（MaxIdleConns=10, IdleConnTimeout=90s），容器日志限制 10MB。 | `SocketPodmanProvider`, `NewSocketPodmanProvider()` | main.go |
 | `quadletfs.go` | **QuadletFS 接口定义**。声明 ScanDir/ReadFile/WriteFile/DeleteFile/ValidateFilename。 | `QuadletFS` 接口 | service/file_service.go, service/unit_service.go |
 | `quadletfs_impl.go` | **文件系统实现**。ScanDir 扫描目录并过滤合法 Quadlet 文件。ValidateFilename 防止路径遍历（白名单扩展名 + filepath.Clean）。WriteFile 自动创建目录。 | `QuadletFSImpl`, `NewQuadletFSImpl()` | main.go, service 内部 |
 | `mock_systemd.go` | **SystemdProvider Mock**。内存中模拟 Units map，可控返回错误。用于测试。 | `MockSystemd`, `NewMockSystemd()` | 测试文件 |
@@ -100,8 +100,8 @@ internal/
 
 | 文件 | 作用 | 关键方法 | 被谁使用 |
 |------|------|----------|----------|
-| `unit_service.go` | **单元生命周期管理**。`ListUnits` 扫描 Quadlet 文件→映射为 systemd 单元名→过滤 D-Bus 返回的单元列表。`StartUnit` 先 DaemonReload 再启动。支持用户级目录隔离（`resolveFS`）。 | `ListUnits(ctx, userID)`, `StartUnit()`, `StopUnit()`, `RestartUnit()`, `EnableUnit()`, `DisableUnit()`, `DaemonReload()` | handler/unit_handler.go |
-| `file_service.go` | **Quadlet 文件 CRUD**。`ApplyFile` 是核心：写入文件→DaemonReload→StartUnit。`ValidateContent` 解析 INI 并检查 Image 是否存在。定义 `SettingsLookup` 接口用于用户目录解析。 | `ListFiles()`, `ReadFile()`, `WriteFile()`, `DeleteFile()`, `ApplyFile()`, `ValidateContent()` | handler/file_handler.go |
+| `unit_service.go` | **单元生命周期管理**。`ListUnits` 扫描 Quadlet 文件→映射为 systemd 单元名→过滤 D-Bus 返回的单元列表。`StartUnit` 直接启动（不调 DaemonReload，仅 ApplyFile 后调用）。支持用户级目录隔离（`resolveFS` + sync.Map 缓存 10s TTL）。 | `ListUnits(ctx, userID)`, `StartUnit()`, `StopUnit()`, `RestartUnit()`, `EnableUnit()`, `DisableUnit()`, `DaemonReload()` | handler/unit_handler.go |
+| `file_service.go` | **Quadlet 文件 CRUD**。`ApplyFile` 是核心：写入文件→DaemonReload→StartUnit。`ValidateContent` 解析 INI 并检查 Image 是否存在。定义 `SettingsLookup` 接口用于用户目录解析。`resolveFS` 使用 sync.Map 缓存用户目录（10s TTL）。 | `ListFiles()`, `ReadFile()`, `WriteFile()`, `DeleteFile()`, `ApplyFile()`, `ValidateContent()` | handler/file_handler.go |
 | `container_service.go` | **容器操作封装**。直接代理到 PodmanProvider。 | `ListContainers()`, `GetContainerLogs()`, `PauseContainer()`, `InspectContainer()` | handler/container_handler.go |
 | `orchestrator.go` | **容器编排器**。协调 systemd 和 podman：判断容器是否由 Quadlet 管理（`IsManaged`），如果是则通过 systemd 控制，否则直接操作 podman。 | `Start()`, `Stop()`, `Restart()`, `Remove()`, `IsManaged()` | handler/container_handler.go |
 | `image_service.go` | **镜像操作封装**。代理到 PodmanProvider。 | `ListImages()`, `PullImage()`, `RemoveImage()`, `InspectImage()` | handler/image_handler.go |
@@ -111,7 +111,7 @@ internal/
 | `service_test.go` | 单元启动/列表、文件 CRUD/验证、编排器测试。 | - | - |
 | `orchestrator_test.go` | 编排器孤立容器检测测试。 | - | - |
 
-**关键设计**: `resolveFS(ctx, userID)` 是用户隔离的核心——根据 userID 查询 settings 表获取自定义 quadlet_dir，返回对应的 QuadletFS 实例。
+**关键设计**: `resolveFS(ctx, userID)` 是用户隔离的核心——根据 userID 查询 settings 表获取自定义 quadlet_dir，返回对应的 QuadletFS 实例。使用 `sync.Map` 缓存用户目录路径（10 秒 TTL），减少 DB 查询。
 
 ### 2.6 handler/ — HTTP 处理层
 
@@ -146,9 +146,9 @@ internal/
 
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
-| `db.go` | SQLite 初始化。使用 `golang-migrate` 自动执行 `migrations/*.sql`。WAL 模式 + 外键约束。 | main.go |
-| `user_store.go` | 用户表 CRUD。`Create`/`GetByID`/`GetByUsername`/`ListAll`/`Delete`/`UpdateRole`/`UpdatePassword`/`HasAdmin`。 | auth/service.go |
-| `settings_store.go` | 用户设置表 CRUD。`GetByUserID`（不存在时自动创建默认行）/`Update`（带字段类型验证）。 | auth/service.go, service 层 (via SettingsLookup) |
+| `db.go` | SQLite 初始化。使用 `golang-migrate` 自动执行 `migrations/*.sql`。WAL 模式 + 外键约束 + busy_timeout=5000 + synchronous=NORMAL。SetMaxOpenConns(1) 避免锁竞争。 | main.go |
+| `user_store.go` | 用户表 CRUD。`Create`/`GetByID`/`GetByUsername`/`GetByUsernameWithHash`/`ListAll`/`Delete`/`UpdateRole`/`UpdatePassword`/`HasAdmin`。 | auth/service.go |
+| `settings_store.go` | 用户设置表 CRUD。`GetByUserID`（不存在时自动创建默认行并直接返回，无递归查询）/`Update`（带字段类型验证）。 | auth/service.go, service 层 (via SettingsLookup) |
 | `migrations/001_init.up.sql` | 初始 schema: users + user_settings + config 三张表。 | db.go (embed) |
 | `migrations/001_init.down.sql` | 回滚脚本。 | db.go (embed) |
 | `*_test.go` | Store 层测试（内存数据库）。 | - | - |
@@ -180,7 +180,7 @@ internal/
 
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
-| `hub.go` | **WebSocket 消息中心**。管理客户端连接注册/注销，消息广播。`HandleWebSocket` 处理 WS 升级（含 JWT 认证）。`StartStatsBroadcaster` 定时推送容器统计。`StartAlertBroadcaster` 检测单元失败并推送告警（含启动预热）。 | main.go, handler/stats_handler.go |
+| `hub.go` | **WebSocket 消息中心**。管理客户端连接注册/注销，消息广播。`HandleWebSocket` 处理 WS 升级（含 JWT 认证）。`StartStatsBroadcaster` 定时推送容器统计。`StartAlertBroadcaster` 检测单元失败并推送告警（含启动预热、map 预分配）。`Run(ctx)` 支持 context 取消优雅关闭。 | main.go, handler/stats_handler.go |
 
 ---
 

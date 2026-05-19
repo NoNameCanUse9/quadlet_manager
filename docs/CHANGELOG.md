@@ -1,5 +1,26 @@
 # 变更日志
 
+## 2026-05-20 — 性能优化：内存、数据库查询、连接池
+
+### `c962187` perf: optimize memory, DB queries, and connection pooling
+
+#### HIGH 优先级
+- **Podman HTTP 连接池** (`podman_socket.go`)：添加 `MaxIdleConns=10`, `MaxIdleConnsPerHost=5`, `IdleConnTimeout=90s`，移除硬编码 30s 全局超时，避免频繁重建 Unix Socket 连接
+- **SQLite 并发保护** (`store/db.go`)：添加 `_busy_timeout=5000`, `_synchronous=NORMAL` PRAGMA，设置 `SetMaxOpenConns(1)` 避免 SQLite 锁竞争
+- **Login 单条 SQL** (`auth/service.go`, `user_store.go`)：新增 `GetByUsernameWithHash` 方法，Login 从 2 次 DB 查询减为 1 次
+
+#### MEDIUM 优先级
+- **DaemonReload 优化** (`unit_service.go`)：`StartUnit` 不再调用 `DaemonReload`（仅 `ApplyFile` 文件写入后调用），避免每次启动都重新读取所有 unit 文件
+- **resolveFS 缓存** (`file_service.go`, `unit_service.go`)：添加 `sync.Map` 缓存用户目录路径（TTL 10 秒），减少每次文件操作的 DB 查询
+- **GetByUserID 消除递归** (`settings_store.go`)：首次访问时 INSERT 后直接返回默认值，不再递归调用自身（从 2 次查询减为 1 次）
+- **容器日志大小限制** (`podman_socket.go`)：`io.ReadAll` 添加 10MB 上限（`io.LimitReader`），防止失控容器 OOM
+
+#### LOW 优先级
+- **Alert map 预分配** (`ws/hub.go`)：`make(map, len(previousFailed))` + swap-and-clear 模式，减少 GC 压力
+- **WebSocket 优雅关闭** (`ws/hub.go`, `main.go`)：`Run()` 接受 `context.Context`，关闭时清理所有客户端连接，防止 goroutine 泄漏
+
+---
+
 ## 2026-05-20 — GitHub Release OTA 更新检查 + CI/CD 自动发布
 
 ### `f07a791` feat: add version system with ldflags injection
