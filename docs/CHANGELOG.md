@@ -2,19 +2,36 @@
 
 ## 2026-05-20 — GitHub Release OTA 更新检查 + CI/CD 自动发布
 
-### 新增
-- **版本号系统**: 通过 git tag + ldflags 在构建时注入版本号 (`internal/version`)，`/api/v1/system/info` 返回 `version` 字段
-- **GitHub Release 更新检查器**: 后端定期（每 24 小时）调用 GitHub Releases API 检查新版本，使用 `golang.org/x/mod/semver` 进行语义化版本比较
-  - `GET /api/v1/system/update` — 获取缓存的更新信息
-  - `POST /api/v1/system/update/check` — 手动触发检查
-- **前端更新通知**: AppHeader 顶部栏在有新版本时显示蓝色通知图标 + 小圆点 badge，点击弹出 Popover 显示版本差异和下载链接
-- **Settings 关于页面**: Settings 页面底部新增「关于」区块，显示当前版本、最新版本、上次检查时间、Release Notes，支持手动检查更新
-- **GitHub Actions CI/CD**: 新增 `release.yml`（tag 触发构建 linux/amd64 + arm64 二进制并发布 Release）和 `ci.yml`（PR/push 时运行测试和前端构建）
-- **i18n**: 新增 `settings.about.*` 和 `header.updateAvailable` 中英文翻译
+### `f07a791` feat: add version system with ldflags injection
+- 新增 `internal/version/version.go`，定义 `Version` 变量（默认 `"dev"`），构建时通过 ldflags 注入
+- `Makefile` 构建命令新增 `-ldflags "-s -w -X .../version.Version=$(VERSION)"`，`VERSION` 由 `git describe --tags --always --dirty` 生成
 
-### 变更
-- `Makefile` 构建命令新增 `-ldflags` 版本注入
-- `SystemInfo` API 响应新增 `version` 字段
+### `92fd853` feat(updater): add GitHub Release checker with semver comparison
+- 新增 `internal/updater/checker.go`：定期调用 GitHub Releases API 检查新版本，使用 `golang.org/x/mod/semver` 进行语义化版本比较
+  - `NewChecker(currentVersion, repo)` 创建检查器
+  - `Check()` 手动触发检查，`GetCached()` 获取缓存结果
+  - `StartPeriodicCheck()` 启动后台 goroutine（每 24 小时）
+  - dev 版本始终认为有更新，dirty git describe 做特殊处理
+- 新增 `internal/updater/checker_test.go`：9 个测试覆盖 semver 比较、Mock HTTP Server 成功/网络错误、缓存读取
+
+### `e139c83` feat: integrate update checker with API endpoints
+- `internal/handler/system_handler.go`：新增 `GetUpdateInfo()` 和 `CheckUpdate()` handler 方法，`SystemInfo` 响应新增 `version` 字段
+- `cmd/quadlet-manager/main.go`：初始化 `updater.Checker`，启动定期检查，注册 `/system/update` 和 `/system/update/check` 路由
+- `internal/handler/handler_test.go`：新增 update 相关测试用例
+
+### `c5df43f` feat(frontend): add update API client and i18n translations
+- `web/src/api/client.ts`：新增 `UpdateInfo` 接口、`getUpdateInfo()` 和 `checkUpdate()` API 方法，`SystemInfo` 接口新增 `version` 字段
+- `web/src/i18n/en.json` / `zh.json`：新增 `header.updateAvailable` 和 `settings.about.*` 共 9 个翻译 key
+
+### `1141115` feat(frontend): add update notification badge to AppHeader
+- `web/src/components/layout/AppHeader.tsx`：顶部栏新增蓝色通知图标 + 小圆点 badge（有新版本时显示），点击弹出 Popover 显示版本差异和下载链接，30 分钟自动刷新
+
+### `4b37380` feat(frontend): add About section to Settings page with update info
+- `web/src/pages/SettingsPage.tsx`：底部新增「关于」区块，显示当前版本、最新版本、上次检查时间、更新日志，支持手动检查更新和跳转下载
+
+### `0e6d9c4` ci: add GitHub Actions for release and CI
+- 新增 `.github/workflows/release.yml`：`v*` tag 触发，构建 linux/amd64 + linux/arm64 二进制，创建 Release 并附带 checksums
+- 新增 `.github/workflows/ci.yml`：push main / PR 时运行 Go 测试和前端构建
 
 ---
 
