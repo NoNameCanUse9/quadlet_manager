@@ -16,7 +16,8 @@
     "restart": "Restart",
     "reload": "Reload",
     "daemonReload": "Daemon Reload",
-    "enableOnBoot": "Enable on Boot"
+    "enableOnBoot": "Enable on Boot",
+    "updateAvailable": "Update available"
   },
   "status": {
     "active": "Active",
@@ -238,7 +239,18 @@
     "rootless": "Rootless Mode",
     "quadletDir": "Quadlet Directory",
     "podmanSocket": "Podman Socket",
-    "save": "Save"
+    "save": "Save",
+    "about": {
+      "title": "About",
+      "currentVersion": "Current Version",
+      "latestVersion": "Latest Version",
+      "hasUpdate": "Update available",
+      "noUpdate": "Up to date",
+      "checkUpdate": "Check for Updates",
+      "goToDownload": "Go to Download",
+      "lastChecked": "Last Checked",
+      "releaseNotes": "Release Notes"
+    }
   },
   "users": {
     "title": "Users",

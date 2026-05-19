@@ -16,7 +16,8 @@
     "restart": "重启",
     "reload": "重载",
     "daemonReload": "守护进程重载",
-    "enableOnBoot": "开机自启"
+    "enableOnBoot": "开机自启",
+    "updateAvailable": "有新版本"
   },
   "status": {
     "active": "运行中",
@@ -238,7 +239,18 @@
     "rootless": "Rootless 模式",
     "quadletDir": "Quadlet 目录",
     "podmanSocket": "Podman Socket",
-    "save": "保存"
+    "save": "保存",
+    "about": {
+      "title": "关于",
+      "currentVersion": "当前版本",
+      "latestVersion": "最新版本",
+      "hasUpdate": "有新版本可用",
+      "noUpdate": "已是最新版本",
+      "checkUpdate": "检查更新",
+      "goToDownload": "前往下载",
+      "lastChecked": "上次检查",
+      "releaseNotes": "更新日志"
+    }
   },
   "users": {
     "title": "用户管理",

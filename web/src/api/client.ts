@@ -27,6 +27,8 @@ export const api = {
   request,
   // System
   getSystemInfo: () => request<SystemInfo>('/system/info'),
+  getUpdateInfo: () => request<UpdateInfo>('/system/update'),
+  checkUpdate: () => request<UpdateInfo>('/system/update/check', { method: 'POST' }),
 
   // Units
   listUnits: () => request<UnitStatus[]>('/units'),
@@ -148,6 +150,17 @@ export interface SystemInfo {
   port: number
   rootless: boolean
   quadletDir: string
+  version: string
+}
+
+export interface UpdateInfo {
+  current: string
+  latest: string
+  hasUpdate: boolean
+  releaseUrl: string
+  releaseNote: string
+  publishedAt: string
+  checkedAt: string
 }
 
 export interface UnitStatus {
