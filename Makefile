@@ -1,10 +1,13 @@
 .PHONY: build frontend dev-frontend dev-backend test run lint clean dev
 
+VERSION := $(shell git describe --tags --always --dirty)
+
 # Build frontend and embed in Go binary
 build: frontend
 	mkdir -p cmd/quadlet-manager/web
 	cp -r web/dist cmd/quadlet-manager/web/
-	go build -o bin/quadlet-manager ./cmd/quadlet-manager
+	go build -ldflags "-s -w -X github.com/choken/quadlet-manager/internal/version.Version=$(VERSION)" \
+		-o bin/quadlet-manager ./cmd/quadlet-manager
 	rm -rf cmd/quadlet-manager/web
 
 # Build frontend only
