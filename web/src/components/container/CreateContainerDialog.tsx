@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Loader2 } from 'lucide-react'
-import { ConfigWizard, wizardToQuadlet, type WizardData } from '@/components/wizard/ConfigWizard'
+import { ConfigWizard, wizardToQuadlet, defaultWizardData, type WizardData } from '@/components/wizard/ConfigWizard'
 import { api } from '@/api/client'
 import { toast } from 'sonner'
 
@@ -11,19 +11,7 @@ interface Props {
   onCreated: () => void
 }
 
-const initialData: WizardData = {
-  image: '',
-  exec: '',
-  ports: [],
-  volumes: [],
-  env: [],
-  labels: [],
-  user: '',
-  group: '',
-  hostName: '',
-  network: '',
-  restartPolicy: 'always',
-}
+const initialData: WizardData = defaultWizardData
 
 export function CreateContainerDialog({ open, onClose, onCreated }: Props) {
   const { t } = useTranslation()
@@ -33,14 +21,18 @@ export function CreateContainerDialog({ open, onClose, onCreated }: Props) {
 
   if (!open) return null
 
-  const canSubmit = name.trim() && data.image.trim()
+  const canSubmit = name.trim() && data.container.image.trim()
 
   const handleSubmit = async () => {
     if (!canSubmit) return
     setSubmitting(true)
     try {
       const filename = `${name.trim()}.container`
-      const content = wizardToQuadlet(data, name.trim())
+      const dataWithName = {
+        ...data,
+        unit: { ...data.unit, description: data.unit.description || name.trim() },
+      }
+      const content = wizardToQuadlet(dataWithName)
       await api.applyFile(filename, content)
       toast.success(t('containers.createSuccess'))
       setName('')

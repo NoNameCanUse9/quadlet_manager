@@ -68,9 +68,9 @@ export function FilesPage() {
   const handleWizardChange = useCallback(
     (data: WizardData) => {
       setWizardData(data)
-      setContent(wizardToQuadlet(data, selectedFile?.replace(/\.[^.]+$/, '') || 'container'))
+      setContent(wizardToQuadlet(data))
     },
-    [selectedFile]
+    []
   )
 
   // Sync editor -> wizard (on mode switch)

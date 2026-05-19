@@ -17,6 +17,16 @@
   --font-sans: "JetBrains Mono", ui-monospace, monospace;
 }
 
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

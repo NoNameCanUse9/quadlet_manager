@@ -173,7 +173,25 @@
     "gid": "GID (如 1000)",
     "restartPolicy": "重启策略",
     "networkName": "网络名称",
-    "labels": "标签"
+    "labels": "标签",
+    "tabs": {
+      "general": "常规配置",
+      "unit": "Unit 依赖",
+      "service": "服务配置"
+    },
+    "autoUpdate": "自动更新",
+    "autoUpdateEnabled": "自动更新已启用",
+    "autoUpdateDisabled": "自动更新已禁用",
+    "autoUpdateRegistry": "Registry（自动拉取新镜像）",
+    "autoUpdateLocal": "Local（本地检测变更）",
+    "description": "服务描述",
+    "after": "启动后依赖 (After)",
+    "requires": "强依赖 (Requires)",
+    "wants": "弱依赖 (Wants)",
+    "timeoutStartSec": "启动超时（秒）",
+    "codePreview": "代码预览",
+    "addPort": "添加端口",
+    "addVolume": "添加卷"
   },
   "common": {
     "loading": "加载中...",

@@ -173,7 +173,25 @@
     "gid": "GID (e.g. 1000)",
     "restartPolicy": "Restart Policy",
     "networkName": "Network name",
-    "labels": "Labels"
+    "labels": "Labels",
+    "tabs": {
+      "general": "General",
+      "unit": "Unit Dependencies",
+      "service": "Service"
+    },
+    "autoUpdate": "Auto Update",
+    "autoUpdateEnabled": "Auto update enabled",
+    "autoUpdateDisabled": "Auto update disabled",
+    "autoUpdateRegistry": "Registry (auto pull new images)",
+    "autoUpdateLocal": "Local (detect local changes)",
+    "description": "Description",
+    "after": "After (ordering dependency)",
+    "requires": "Requires (strong dependency)",
+    "wants": "Wants (weak dependency)",
+    "timeoutStartSec": "Start Timeout (seconds)",
+    "codePreview": "Code Preview",
+    "addPort": "Add port",
+    "addVolume": "Add volume"
   },
   "common": {
     "loading": "Loading...",
