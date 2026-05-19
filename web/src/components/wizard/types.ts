@@ -43,6 +43,12 @@ export interface ContainerData {
   healthCheck: HealthCheckConfig
 }
 
+/** 等待挂载点 */
+export interface WaitForPath {
+  path: string
+  strict: boolean  // true = mountpoint -q, false = [ -d ]
+}
+
 export interface UnitData {
   description: string
   after: string[]
@@ -53,7 +59,7 @@ export interface UnitData {
 export interface ServiceData {
   restart: 'always' | 'on-failure' | 'no' | 'unless-stopped'
   timeoutStartSec: string
-  waitForPaths: string[]
+  waitForPaths: WaitForPath[]
   execStartPre: string[]
   execStartPost: string[]
 }

@@ -18,7 +18,7 @@ export const defaultWizardData: WizardData = {
       cmd: '',
       interval: '10s',
       retries: 3,
-      startPeriod: '30s',
+      startPeriod: '60s',
       timeout: '5s',
     },
   },
