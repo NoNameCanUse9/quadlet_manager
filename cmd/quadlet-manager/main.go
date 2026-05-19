@@ -20,6 +20,8 @@ import (
 	"github.com/choken/quadlet-manager/internal/provider"
 	"github.com/choken/quadlet-manager/internal/service"
 	"github.com/choken/quadlet-manager/internal/store"
+	"github.com/choken/quadlet-manager/internal/updater"
+	"github.com/choken/quadlet-manager/internal/version"
 	"github.com/choken/quadlet-manager/internal/ws"
 	"github.com/gin-gonic/gin"
 )
@@ -139,6 +141,7 @@ func main() {
 
 	// Initialize handlers
 	systemH := handler.NewSystemHandler(cfg, unitSvc)
+	systemH.SetChecker(updateChecker)
 	unitH := handler.NewUnitHandler(unitSvc, hub)
 	fileH := handler.NewFileHandler(fileSvc)
 	containerH := handler.NewContainerHandler(containerSvc, orchestrator)
@@ -152,6 +155,10 @@ func main() {
 	authH := handler.NewAuthHandler(authSvc)
 	settingsH := handler.NewSettingsHandler(authSvc)
 	composeH := handler.NewComposeHandler(composeProvider)
+
+	// Initialize update checker
+	updateChecker := updater.NewChecker(version.Version, "choken/quadlet-manager")
+	updateChecker.StartPeriodicCheck(context.Background())
 
 	// Setup router
 	r := gin.Default()
@@ -187,6 +194,8 @@ func main() {
 
 		// System/Unit routes
 		protected.GET("/system/info", systemH.GetSystemInfo)
+		protected.GET("/system/update", systemH.GetUpdateInfo)
+		protected.POST("/system/update/check", systemH.CheckUpdate)
 
 		protected.GET("/units", unitH.ListUnits)
 		protected.GET("/units/:name", unitH.GetUnit)

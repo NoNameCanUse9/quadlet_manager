@@ -31,6 +31,8 @@ func setupRouter(cfg config.Config) (*gin.Engine, *provider.MockSystemd, *provid
 	r := gin.New()
 	api := r.Group("/api/v1")
 	api.GET("/system/info", systemH.GetSystemInfo)
+	api.GET("/system/update", systemH.GetUpdateInfo)
+	api.POST("/system/update/check", systemH.CheckUpdate)
 	api.GET("/units", unitH.ListUnits)
 	api.POST("/units/:name/start", unitH.StartUnit)
 	api.POST("/units/:name/stop", unitH.StopUnit)
@@ -269,5 +271,34 @@ func TestFileHandler_CreateFile_InvalidBody(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for invalid JSON, got %d", w.Code)
+	}
+}
+
+func TestSystemHandler_GetUpdateInfo_NoChecker(t *testing.T) {
+	cfg := config.New(config.Options{Port: 9090})
+	r, _, _ := setupRouter(cfg)
+
+	req := httptest.NewRequest("GET", "/api/v1/system/update", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", w.Code)
+	}
+}
+
+func TestSystemHandler_GetSystemInfo_HasVersion(t *testing.T) {
+	cfg := config.New(config.Options{Port: 9090})
+	r, _, _ := setupRouter(cfg)
+
+	req := httptest.NewRequest("GET", "/api/v1/system/info", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var info map[string]interface{}
+	json.NewDecoder(w.Body).Decode(&info)
+
+	if _, ok := info["version"]; !ok {
+		t.Error("expected 'version' field in system info")
 	}
 }
