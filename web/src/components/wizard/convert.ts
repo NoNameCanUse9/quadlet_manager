@@ -53,12 +53,34 @@ export function wizardToQuadlet(data: WizardData): string {
   if (data.container.group) lines.push(`Group=${data.container.group}`)
   if (data.container.hostName) lines.push(`HostName=${data.container.hostName}`)
   if (data.container.network) lines.push(`Network=${data.container.network}`)
+  // HealthCheck
+  if (data.container.healthCheck.enabled && data.container.healthCheck.cmd) {
+    lines.push(`HealthCmd=${data.container.healthCheck.cmd}`)
+    if (data.container.healthCheck.interval) lines.push(`HealthInterval=${data.container.healthCheck.interval}`)
+    if (data.container.healthCheck.retries) lines.push(`HealthRetries=${data.container.healthCheck.retries}`)
+    if (data.container.healthCheck.startPeriod) lines.push(`HealthStartPeriod=${data.container.healthCheck.startPeriod}`)
+    if (data.container.healthCheck.timeout) lines.push(`HealthTimeout=${data.container.healthCheck.timeout}`)
+  }
   lines.push('')
 
   // [Service]
   lines.push('[Service]')
   lines.push(`Restart=${data.service.restart}`)
   lines.push(`TimeoutStartSec=${data.service.timeoutStartSec}`)
+  // waitForPaths → ExecStartPre scripts
+  for (const wp of data.service.waitForPaths) {
+    if (wp.strict) {
+      lines.push(`ExecStartPre=/bin/sh -c 'until mountpoint -q ${wp.path}; do sleep 1; done'`)
+    } else {
+      lines.push(`ExecStartPre=/bin/sh -c 'until [ -d ${wp.path} ]; do sleep 1; done'`)
+    }
+  }
+  for (const cmd of data.service.execStartPre) {
+    lines.push(`ExecStartPre=${cmd}`)
+  }
+  for (const cmd of data.service.execStartPost) {
+    lines.push(`ExecStartPost=${cmd}`)
+  }
   lines.push('')
 
   // [Install]
@@ -162,6 +184,11 @@ export function quadletToWizard(content: string): WizardData {
         case 'Group': data.container.group = val; break
         case 'HostName': data.container.hostName = val; break
         case 'Network': data.container.network = val; break
+        case 'HealthCmd': data.container.healthCheck.cmd = val; data.container.healthCheck.enabled = true; break
+        case 'HealthInterval': data.container.healthCheck.interval = val; break
+        case 'HealthRetries': data.container.healthCheck.retries = parseInt(val, 10) || 3; break
+        case 'HealthStartPeriod': data.container.healthCheck.startPeriod = val; break
+        case 'HealthTimeout': data.container.healthCheck.timeout = val; break
       }
     }
 
@@ -174,6 +201,20 @@ export function quadletToWizard(content: string): WizardData {
           break
         }
         case 'TimeoutStartSec': data.service.timeoutStartSec = val; break
+        case 'ExecStartPre': {
+          // Dedup: classify waitForPaths vs custom scripts
+          const dirMatch = val.match(/until \[ -d (.+?) \]/)
+          const mpMatch = val.match(/until mountpoint -q (.+?) /)
+          if (dirMatch) {
+            data.service.waitForPaths.push({ path: dirMatch[1], strict: false })
+          } else if (mpMatch) {
+            data.service.waitForPaths.push({ path: mpMatch[1], strict: true })
+          } else {
+            data.service.execStartPre.push(val)
+          }
+          break
+        }
+        case 'ExecStartPost': data.service.execStartPost.push(val); break
       }
     }
   }
