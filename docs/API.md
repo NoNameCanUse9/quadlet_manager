@@ -112,9 +112,41 @@ Authorization: Bearer <token>
 {
   "port": 9090,
   "rootless": true,
-  "quadletDir": "/home/user/.config/containers/systemd"
+  "quadletDir": "/home/user/.config/containers/systemd",
+  "version": "v1.0.0"
 }
 ```
+
+### 获取更新信息
+
+```
+GET /api/v1/system/update
+Authorization: Bearer <token>
+```
+
+返回缓存的 GitHub Release 更新检查结果。后端每 24 小时自动检查一次。
+
+**响应**:
+```json
+{
+  "current": "v1.0.0",
+  "latest": "v1.1.0",
+  "hasUpdate": true,
+  "releaseUrl": "https://github.com/choken/quadlet-manager/releases/tag/v1.1.0",
+  "releaseNote": "## Changes\n- feat: add OTA update",
+  "publishedAt": "2026-05-20T10:00:00Z",
+  "checkedAt": "2026-05-20T14:30:00Z"
+}
+```
+
+### 手动检查更新
+
+```
+POST /api/v1/system/update/check
+Authorization: Bearer <token>
+```
+
+立即触发一次 GitHub Release 检查，返回最新的更新信息（格式同上）。
 
 ---
 

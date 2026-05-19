@@ -42,6 +42,8 @@ internal/
 ├── middleware/       # Gin 中间件
 ├── store/           # 数据持久层
 ├── parser/          # Quadlet 文件解析
+├── updater/         # GitHub Release 更新检查
+├── version/         # 版本号（ldflags 注入）
 └── ws/              # WebSocket Hub
 ```
 
@@ -126,7 +128,7 @@ internal/
 | `backup_handler.go` | 备份导出/导入。导入限制 50MB。 | /api/v1/backup/* | JWT |
 | `settings_handler.go` | 用户设置读取/更新。更新时验证 quadlet_dir 必须是存在的绝对路径。 | /api/v1/settings | JWT |
 | `stats_handler.go` | 容器统计快照。 | /api/v1/stats | JWT |
-| `system_handler.go` | 系统信息（rootless/port/quadletDir）。 | /api/v1/system/info | JWT |
+| `system_handler.go` | 系统信息（rootless/port/quadletDir/version）+ 更新检查。 | /api/v1/system/info, /api/v1/system/update, /api/v1/system/update/check | JWT |
 | `handler_test.go` | Handler 层集成测试（通过 httptest + Gin 路由）。 | - | - |
 | `auth_handler_test.go` | 认证 Handler 完整测试（17 个用例覆盖所有认证流程）。 | - | - |
 
@@ -161,7 +163,20 @@ internal/
 | `quadlet_generator.go` | INI 生成器。将 `QuadletConfig` 结构体序列化为 INI 字符串。用于表单模式→文件内容。 | service/file_service.go |
 | `quadlet_parser_test.go` | 解析/生成往返测试、多值 key 测试。 | - | - |
 
-### 2.10 ws/ — WebSocket Hub
+### 2.10 updater/ — GitHub Release 更新检查
+
+| 文件 | 作用 | 导出 | 被谁使用 |
+|------|------|------|----------|
+| `checker.go` | **更新检查器**。`Checker` 定期调用 GitHub Releases API 检查新版本，结果缓存在内存中。`Check()` 手动触发检查，`GetCached()` 获取缓存结果，`StartPeriodicCheck()` 启动后台 goroutine（每 24 小时）。使用 `semver` 进行版本比较，`dev` 版本始终认为有更新。 | `Checker`, `UpdateInfo`, `NewChecker()` | main.go, handler/system_handler.go |
+| `checker_test.go` | 版本比较测试（semver/非 semver/dev）、Mock HTTP Server 测试 Checker.Check 成功和网络错误。 | - | - |
+
+### 2.11 version/ — 版本号
+
+| 文件 | 作用 | 导出 | 被谁使用 |
+|------|------|------|----------|
+| `version.go` | 版本号变量，构建时通过 ldflags 注入。默认 `"dev"`。 | `Version` | main.go, handler/system_handler.go |
+
+### 2.12 ws/ — WebSocket Hub
 
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
