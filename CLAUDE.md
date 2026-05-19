@@ -28,6 +28,7 @@
 - **资源管理**: 镜像拉取/删除、存储卷/网络 CRUD
 - **用户认证**: JWT 认证，admin/user 角色，用户级资源隔离
 - **实时推送**: WebSocket 推送容器统计和单元状态变更
+- **OTA 更新检查**: 定期检查 GitHub Release，前端通知新版本，Settings 页面查看详情
 
 ### 1.2 技术栈
 
@@ -81,6 +82,8 @@ internal/
 ├── middleware/       # Gin 中间件
 ├── store/           # 数据持久层
 ├── parser/          # Quadlet 文件解析
+├── updater/         # GitHub Release 更新检查
+├── version/         # 版本号（ldflags 注入）
 └── ws/              # WebSocket Hub
 ```
 
@@ -170,7 +173,7 @@ internal/
 | `backup_handler.go` | 备份导出/导入。导入限制 50MB。 | /api/v1/backup/* | JWT |
 | `settings_handler.go` | 用户设置读取/更新。更新时验证 quadlet_dir 必须是存在的绝对路径。 | /api/v1/settings | JWT |
 | `stats_handler.go` | 容器统计快照。 | /api/v1/stats | JWT |
-| `system_handler.go` | 系统信息（rootless/port/quadletDir）。 | /api/v1/system/info | JWT |
+| `system_handler.go` | 系统信息（rootless/port/quadletDir/version）+ 更新检查。 | /api/v1/system/info, /api/v1/system/update, /api/v1/system/update/check | JWT |
 | `handler_test.go` | Handler 层集成测试（通过 httptest + Gin 路由）。 | - | - |
 | `auth_handler_test.go` | 认证 Handler 完整测试（17 个用例覆盖所有认证流程）。 | - | - |
 
@@ -204,6 +207,19 @@ internal/
 | `quadlet_parser.go` | INI 解析器。将 Quadlet 文件内容解析为 `QuadletConfig` 结构体（Unit/Container/Service/Install 四个 section）。支持多值 key（如多个 PublishPort）。 | service/file_service.go |
 | `quadlet_generator.go` | INI 生成器。将 `QuadletConfig` 结构体序列化为 INI 字符串。用于表单模式→文件内容。 | service/file_service.go |
 | `quadlet_parser_test.go` | 解析/生成往返测试、多值 key 测试。 | - | - |
+
+#### updater/ — GitHub Release 更新检查
+
+| 文件 | 作用 | 导出 | 被谁使用 |
+|------|------|------|----------|
+| `checker.go` | **更新检查器**。`Checker` 定期调用 GitHub Releases API 检查新版本，结果缓存在内存中。`Check()` 手动触发检查，`GetCached()` 获取缓存结果，`StartPeriodicCheck()` 启动后台 goroutine（每 24 小时）。使用 `semver` 进行版本比较，`dev` 版本始终认为有更新。 | `Checker`, `UpdateInfo`, `NewChecker()` | main.go, handler/system_handler.go |
+| `checker_test.go` | 版本比较测试（semver/非 semver/dev）、Mock HTTP Server 测试 Checker.Check 成功和网络错误。 | - | - |
+
+#### version/ — 版本号
+
+| 文件 | 作用 | 导出 | 被谁使用 |
+|------|------|------|----------|
+| `version.go` | 版本号变量，构建时通过 ldflags 注入。默认 `"dev"`。 | `Version` | main.go, handler/system_handler.go |
 
 #### ws/ — WebSocket Hub
 
@@ -277,7 +293,7 @@ web/
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
 | `FilesPage.tsx` | **Quadlet 编排控制中心**（主路由 `/files`）。将新建、编辑器（CodeMirror）、向导表单（ConfigWizard）与 Systemd 单元管理（运行状态监控、一键启动/停止/重启、开机自启开关、一键 Deploy）深度合二为一的大一统交互面板。 | /files | useApp, useUnits |
 | `TerminalPage.tsx` | **Web 终端**。xterm.js 终端模拟器，通过 WebSocket 连接到 Podman exec 会话。 | /containers/:id/exec/:exec_id | api client |
-| `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。 | /settings | api client |
+| `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。底部「关于」区块显示版本信息和更新检查。 | /settings | api client |
 | `AdminUsersPage.tsx` | **用户管理页面**（admin only）。列出用户，支持创建/删除/修改角色/重置密码。 | /admin/users | api client |
 | `BackupPage.tsx` | **备份页面**。导出 Quadlet 文件为 tar.gz，导入备份文件恢复。 | /backup | api client |
 
@@ -287,7 +303,7 @@ web/
 |------|------|----------|
 | `layout/AppLayout.tsx` | **主布局**。Sidebar + Header + Content 区域。所有认证后页面都在此布局内。 | router |
 | `layout/AppSidebar.tsx` | **侧边栏导航**。菜单项: Dashboard, Units, Containers, Images, Volumes, Networks, Files, Settings, Admin, Backup。底部显示系统状态。 | AppLayout |
-| `layout/AppHeader.tsx` | **顶部栏**。显示当前页面标题、用户信息、登出按钮。 | AppLayout |
+| `layout/AppHeader.tsx` | **顶部栏**。显示当前页面标题、用户信息、登出按钮。有新版本时显示更新通知 badge + Popover。 | AppLayout |
 | `editor/QuadletEditor.tsx` | **CodeMirror 6 编辑器封装**。自定义 Quadlet INI 语法高亮、暗色主题。 | FilesPage |
 | `editor/ViewToggle.tsx` | **编辑器/表单模式切换**。 | FilesPage |
 | `wizard/ConfigWizard.tsx` | **配置向导表单**。Image/Port/Volume/Environment/Labels 等字段的表单编辑，双向同步编辑器内容。导出 `wizardToQuadlet()` 和 `quadletToWizard()` 用于 Quadlet INI 生成/解析。 | FilesPage, CreateContainerDialog |
@@ -528,7 +544,9 @@ CREATE TABLE config (
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/v1/system/info` | 系统信息（rootless, quadletDir） |
+| GET | `/api/v1/system/info` | 系统信息（rootless, quadletDir, version） |
+| GET | `/api/v1/system/update` | 获取更新检查结果（缓存） |
+| POST | `/api/v1/system/update/check` | 手动触发更新检查 |
 
 ### 5.4 单元管理
 
@@ -853,9 +871,10 @@ WantedBy=default.target
 |----|--------|----------|
 | auth | 10 | JWT 生成/验证、注册/登录、密码错误 |
 | config | 5 | 默认值、覆盖、验证 |
-| handler | 31 | 认证、单元、文件、设置、系统信息 |
+| handler | 33 | 认证、单元、文件、设置、系统信息、更新检查 |
 | parser | 6 | 解析/生成往返、多值键、空文件 |
 | provider | 31 | 接口定义、文件名验证、FS CRUD、Compose 转换、自定义目录导入 |
+| updater | 9 | 版本比较（semver/非 semver/dev）、Checker.Check 成功/网络错误、GetCached |
 | service | 21 | 单元启动/列表、文件 CRUD/验证、编排器、ApplyFile 自动启用、开机自启 |
 | store | 11 | 数据库创建、用户 CRUD、设置 CRUD |
 

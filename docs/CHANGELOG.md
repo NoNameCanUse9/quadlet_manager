@@ -1,5 +1,23 @@
 # 变更日志
 
+## 2026-05-20 — GitHub Release OTA 更新检查 + CI/CD 自动发布
+
+### 新增
+- **版本号系统**: 通过 git tag + ldflags 在构建时注入版本号 (`internal/version`)，`/api/v1/system/info` 返回 `version` 字段
+- **GitHub Release 更新检查器**: 后端定期（每 24 小时）调用 GitHub Releases API 检查新版本，使用 `golang.org/x/mod/semver` 进行语义化版本比较
+  - `GET /api/v1/system/update` — 获取缓存的更新信息
+  - `POST /api/v1/system/update/check` — 手动触发检查
+- **前端更新通知**: AppHeader 顶部栏在有新版本时显示蓝色通知图标 + 小圆点 badge，点击弹出 Popover 显示版本差异和下载链接
+- **Settings 关于页面**: Settings 页面底部新增「关于」区块，显示当前版本、最新版本、上次检查时间、Release Notes，支持手动检查更新
+- **GitHub Actions CI/CD**: 新增 `release.yml`（tag 触发构建 linux/amd64 + arm64 二进制并发布 Release）和 `ci.yml`（PR/push 时运行测试和前端构建）
+- **i18n**: 新增 `settings.about.*` 和 `header.updateAvailable` 中英文翻译
+
+### 变更
+- `Makefile` 构建命令新增 `-ldflags` 版本注入
+- `SystemInfo` API 响应新增 `version` 字段
+
+---
+
 ## 2026-05-19 — Quadlet 编排中心大一统 + 配置向导功能升级 (HealthCheck / 依赖 / 动画预览) + Docker Compose UI 支持 + 文件后缀选择器
 
 ### 新增
