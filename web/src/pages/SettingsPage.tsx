@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useApp } from '@/store/useApp'
-import { api, type UserSettings } from '@/api/client'
+import { api, type UserSettings, type UpdateInfo } from '@/api/client'
 import i18n from '@/i18n'
 
 export function SettingsPage() {
   const { t } = useTranslation()
   const systemInfo = useApp((s) => s.systemInfo)
+  const queryClient = useQueryClient()
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [quadletDir, setQuadletDir] = useState('')
   const [podmanSocket, setPodmanSocket] = useState('')
@@ -20,6 +22,19 @@ export function SettingsPage() {
       setPodmanSocket(s.podman_socket || '')
     }).catch(() => {})
   }, [])
+
+  const { data: updateInfo } = useQuery<UpdateInfo>({
+    queryKey: ['update-info'],
+    queryFn: api.getUpdateInfo,
+    retry: false,
+  })
+
+  const checkMutation = useMutation({
+    mutationFn: () => api.checkUpdate(),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['update-info'], data)
+    },
+  })
 
   const save = async (fields: Record<string, unknown>) => {
     setSaving(true)
@@ -105,6 +120,72 @@ export function SettingsPage() {
           {msg}
         </p>
       )}
+
+      {/* About Section */}
+      <h3 className="text-sm font-bold tracking-wider text-text-primary uppercase">
+        {t('settings.about.title')}
+      </h3>
+
+      <div className="border border-border rounded-lg bg-surface divide-y divide-border">
+        <SettingsRow label={t('settings.about.currentVersion')}>
+          <span className="text-sm text-text-secondary font-mono">
+            {updateInfo?.current || systemInfo?.version || 'dev'}
+          </span>
+        </SettingsRow>
+
+        <SettingsRow label={t('settings.about.latestVersion')}>
+          {updateInfo?.hasUpdate ? (
+            <span className="text-sm text-blue-400 font-mono">
+              {updateInfo.latest}
+              <span className="ml-2 text-xs text-blue-400/70">({t('settings.about.hasUpdate')})</span>
+            </span>
+          ) : (
+            <span className="text-sm text-text-secondary font-mono">
+              {updateInfo?.latest || '-'}
+              {updateInfo && <span className="ml-2 text-xs text-green-400/70">({t('settings.about.noUpdate')})</span>}
+            </span>
+          )}
+        </SettingsRow>
+
+        {updateInfo?.checkedAt && (
+          <SettingsRow label={t('settings.about.lastChecked')}>
+            <span className="text-sm text-text-secondary">
+              {new Date(updateInfo.checkedAt).toLocaleString()}
+            </span>
+          </SettingsRow>
+        )}
+
+        <div className="px-5 py-4 flex items-center gap-3">
+          <button
+            onClick={() => checkMutation.mutate()}
+            disabled={checkMutation.isPending}
+            className="px-3 py-1.5 text-sm rounded bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {checkMutation.isPending ? '...' : t('settings.about.checkUpdate')}
+          </button>
+          {updateInfo?.hasUpdate && updateInfo.releaseUrl && (
+            <a
+              href={updateInfo.releaseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 text-sm rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+            >
+              {t('settings.about.goToDownload')}
+            </a>
+          )}
+        </div>
+
+        {updateInfo?.releaseNote && (
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wide">
+              {t('settings.about.releaseNotes')}
+            </p>
+            <pre className="text-xs text-text-secondary whitespace-pre-wrap font-mono max-h-48 overflow-auto">
+              {updateInfo.releaseNote}
+            </pre>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
