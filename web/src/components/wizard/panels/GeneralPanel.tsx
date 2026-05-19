@@ -242,6 +242,107 @@ export function GeneralPanel({ data, onChange }: Props) {
           </div>
         </AccordionContent>
       </AccordionItem>
+
+      {/* 健康检查 */}
+      <AccordionItem value="healthcheck">
+        <AccordionTrigger>{t('wizard.healthCheck')}</AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={data.healthCheck.enabled}
+                onCheckedChange={(checked) => {
+                  onChange({
+                    healthCheck: { ...data.healthCheck, enabled: checked },
+                  })
+                }}
+              />
+              <span className="text-xs text-text-primary">
+                {data.healthCheck.enabled ? t('wizard.healthCheckEnabled') : t('wizard.healthCheckDisabled')}
+              </span>
+            </div>
+            {data.healthCheck.enabled && (
+              <>
+                <div>
+                  <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1">
+                    {t('wizard.healthCmd')}
+                  </label>
+                  <input
+                    type="text"
+                    value={data.healthCheck.cmd}
+                    onChange={(e) =>
+                      onChange({ healthCheck: { ...data.healthCheck, cmd: e.target.value } })
+                    }
+                    placeholder="curl -f http://localhost/ || exit 1"
+                    className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1">
+                      {t('wizard.healthInterval')}
+                    </label>
+                    <input
+                      type="text"
+                      value={data.healthCheck.interval}
+                      onChange={(e) =>
+                        onChange({ healthCheck: { ...data.healthCheck, interval: e.target.value } })
+                      }
+                      placeholder="10s"
+                      className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1">
+                      {t('wizard.healthRetries')}
+                    </label>
+                    <input
+                      type="number"
+                      value={data.healthCheck.retries}
+                      onChange={(e) =>
+                        onChange({
+                          healthCheck: { ...data.healthCheck, retries: parseInt(e.target.value, 10) || 0 },
+                        })
+                      }
+                      min="0"
+                      className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1">
+                      {t('wizard.healthStartPeriod')}
+                    </label>
+                    <input
+                      type="text"
+                      value={data.healthCheck.startPeriod}
+                      onChange={(e) =>
+                        onChange({ healthCheck: { ...data.healthCheck, startPeriod: e.target.value } })
+                      }
+                      placeholder="60s"
+                      className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                    />
+                    <p className="text-[9px] text-text-muted mt-0.5">{t('wizard.healthStartPeriodHint')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-text-muted uppercase tracking-wider mb-1">
+                      {t('wizard.healthTimeout')}
+                    </label>
+                    <input
+                      type="text"
+                      value={data.healthCheck.timeout}
+                      onChange={(e) =>
+                        onChange({ healthCheck: { ...data.healthCheck, timeout: e.target.value } })
+                      }
+                      placeholder="5s"
+                      className="w-full bg-surface-raised border border-border rounded px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
     </Accordion>
   )
 }
