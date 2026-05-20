@@ -336,10 +336,14 @@ func (p *SocketPodmanProvider) ListVolumes(_ context.Context) ([]model.VolumeInf
 	return resp.Volumes, err
 }
 
-func (p *SocketPodmanProvider) CreateVolume(_ context.Context, name string, labels map[string]string) (*model.VolumeInfo, error) {
+func (p *SocketPodmanProvider) CreateVolume(_ context.Context, name string, labels map[string]string, opts map[string]string) (*model.VolumeInfo, error) {
 	body := map[string]any{"Name": name}
 	if len(labels) > 0 {
 		body["Labels"] = labels
+	}
+	if len(opts) > 0 {
+		body["Driver"] = "local"
+		body["Options"] = opts
 	}
 	var vol model.VolumeInfo
 	err := p.doJSON("POST", "/volumes/create", body, &vol)

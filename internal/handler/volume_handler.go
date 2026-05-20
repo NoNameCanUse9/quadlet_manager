@@ -28,12 +28,21 @@ func (h *VolumeHandler) CreateVolume(c *gin.Context) {
 	var req struct {
 		Name   string            `json:"name" binding:"required"`
 		Labels map[string]string `json:"labels"`
+		Device string            `json:"device"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	vol, err := h.volumes.CreateVolume(c.Request.Context(), req.Name, req.Labels)
+	var opts map[string]string
+	if req.Device != "" {
+		opts = map[string]string{
+			"device": req.Device,
+			"type":   "none",
+			"o":      "bind",
+		}
+	}
+	vol, err := h.volumes.CreateVolume(c.Request.Context(), req.Name, req.Labels, opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -12,8 +12,8 @@ export function useVolumes() {
 export function useCreateVolume() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ name, labels }: { name: string; labels?: Record<string, string> }) =>
-      api.createVolume(name, labels),
+    mutationFn: ({ name, labels, device }: { name: string; labels?: Record<string, string>; device?: string }) =>
+      api.createVolume(name, labels, device),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['volumes'] }),
   })
 }

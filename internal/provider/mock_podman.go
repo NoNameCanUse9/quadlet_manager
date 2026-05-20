@@ -185,7 +185,7 @@ func (m *MockPodman) InspectImage(_ context.Context, _ string) (map[string]any, 
 	return map[string]any{"mock": true}, nil
 }
 
-func (m *MockPodman) CreateVolume(_ context.Context, name string, _ map[string]string) (*model.VolumeInfo, error) {
+func (m *MockPodman) CreateVolume(_ context.Context, name string, _ map[string]string, _ map[string]string) (*model.VolumeInfo, error) {
 	vol := model.VolumeInfo{Name: name, MountPoint: "/var/lib/volumes/" + name}
 	m.Volumes = append(m.Volumes, vol)
 	return &vol, nil

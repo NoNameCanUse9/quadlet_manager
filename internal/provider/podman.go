@@ -40,7 +40,7 @@ type PodmanProvider interface {
 
 	// Volumes
 	ListVolumes(ctx context.Context) ([]model.VolumeInfo, error)
-	CreateVolume(ctx context.Context, name string, labels map[string]string) (*model.VolumeInfo, error)
+	CreateVolume(ctx context.Context, name string, labels map[string]string, opts map[string]string) (*model.VolumeInfo, error)
 	RemoveVolume(ctx context.Context, name string, force bool) error
 	InspectVolume(ctx context.Context, name string) (map[string]any, error)
 
