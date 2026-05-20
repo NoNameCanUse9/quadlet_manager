@@ -250,6 +250,7 @@
       "noUpdate": "Up to date",
       "checkUpdate": "Check for Updates",
       "goToDownload": "Go to Download",
+      "downloadBinary": "Download Binary",
       "lastChecked": "Last Checked",
       "releaseNotes": "Release Notes"
     }

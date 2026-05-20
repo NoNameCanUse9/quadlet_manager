@@ -1,5 +1,13 @@
 # 变更日志
 
+## 2026-05-21 — OTA 更新自动识别架构下载
+
+- **updater** (`updater/checker.go`)：解析 GitHub Release 的 `assets` 数组，通过 `runtime.GOOS/GOARCH` 自动匹配当前架构的二进制下载 URL，新增 `DownloadURL` 字段
+- **前端**：SettingsPage 更新区域新增「下载二进制」按钮（直接下载匹配架构的文件），保留原有的「前往下载」链接
+- **API**：`UpdateInfo` 响应新增 `downloadUrl` 字段
+
+---
+
 ## 2026-05-21 — 创建卷支持指定宿主机路径
 
 - **Provider** (`provider/podman_socket.go`)：`CreateVolume` 新增 `opts` 参数，传入时设置 `Driver: "local"` + `Options: {device, type: "none", o: "bind"}`，实现 bind mount

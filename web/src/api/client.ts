@@ -158,6 +158,7 @@ export interface UpdateInfo {
   latest: string
   hasUpdate: boolean
   releaseUrl: string
+  downloadUrl: string
   releaseNote: string
   publishedAt: string
   checkedAt: string

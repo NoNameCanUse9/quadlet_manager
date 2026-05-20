@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +20,7 @@ type UpdateInfo struct {
 	Latest      string `json:"latest"`
 	HasUpdate   bool   `json:"hasUpdate"`
 	ReleaseURL  string `json:"releaseUrl"`
+	DownloadURL string `json:"downloadUrl"`
 	ReleaseNote string `json:"releaseNote"`
 	PublishedAt string `json:"publishedAt"`
 	CheckedAt   string `json:"checkedAt"`
@@ -25,10 +28,16 @@ type UpdateInfo struct {
 
 // githubRelease is the GitHub API response subset we need.
 type githubRelease struct {
-	TagName     string `json:"tag_name"`
-	HTMLURL     string `json:"html_url"`
-	Body        string `json:"body"`
-	PublishedAt string `json:"published_at"`
+	TagName     string          `json:"tag_name"`
+	HTMLURL     string          `json:"html_url"`
+	Body        string          `json:"body"`
+	PublishedAt string          `json:"published_at"`
+	Assets      []githubAsset   `json:"assets"`
+}
+
+type githubAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
 }
 
 // Checker periodically checks GitHub for new releases.
@@ -82,6 +91,7 @@ func (c *Checker) Check(ctx context.Context) (*UpdateInfo, error) {
 		Current:     c.currentVersion,
 		Latest:      rel.TagName,
 		ReleaseURL:  rel.HTMLURL,
+		DownloadURL: findDownloadURL(rel.Assets),
 		ReleaseNote: rel.Body,
 		PublishedAt: rel.PublishedAt,
 		CheckedAt:   time.Now().UTC().Format(time.RFC3339),
@@ -93,6 +103,17 @@ func (c *Checker) Check(ctx context.Context) (*UpdateInfo, error) {
 	c.mu.Unlock()
 
 	return info, nil
+}
+
+// findDownloadURL finds the binary download URL matching the current OS and architecture.
+func findDownloadURL(assets []githubAsset) string {
+	suffix := fmt.Sprintf("-%s-%s", runtime.GOOS, runtime.GOARCH)
+	for _, a := range assets {
+		if strings.HasSuffix(a.Name, suffix) {
+			return a.BrowserDownloadURL
+		}
+	}
+	return ""
 }
 
 // GetCached returns the last check result, or nil if never checked.
@@ -109,7 +130,8 @@ func (c *Checker) StartPeriodicCheck(ctx context.Context) {
 		if _, err := c.Check(ctx); err != nil {
 			log.Printf("updater: initial check failed: %v", err)
 		}
-		ticker := time.NewTicker(c.checkInterval)
+		ticker := new(time.Ticker)
+		*ticker = *time.NewTicker(c.checkInterval)
 		defer ticker.Stop()
 		for {
 			select {

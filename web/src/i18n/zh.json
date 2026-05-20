@@ -250,6 +250,7 @@
       "noUpdate": "已是最新版本",
       "checkUpdate": "检查更新",
       "goToDownload": "前往下载",
+      "downloadBinary": "下载二进制",
       "lastChecked": "上次检查",
       "releaseNotes": "更新日志"
     }
