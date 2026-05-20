@@ -4,7 +4,21 @@ on:
     tags: ['v*']
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Run tests
+        run: go test ./internal/...
+
   build:
+    needs: test
     strategy:
       matrix:
         include:
@@ -30,6 +44,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+          cache: true
 
       - name: Build binary
         env:
