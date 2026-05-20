@@ -10,12 +10,17 @@ import (
 
 func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") {
+		token := ""
+		if header := c.GetHeader("Authorization"); strings.HasPrefix(header, "Bearer ") {
+			token = strings.TrimPrefix(header, "Bearer ")
+		}
+		if token == "" {
+			token = c.Query("token")
+		}
+		if token == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
 			return
 		}
-		token := strings.TrimPrefix(header, "Bearer ")
 		claims, err := auth.ValidateToken(jwtSecret, token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
