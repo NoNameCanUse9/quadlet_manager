@@ -38,11 +38,12 @@ func (h *ImageHandler) PullImage(c *gin.Context) {
 		return
 	}
 
+	userID := c.GetInt64("user_id")
 	taskID := generateID()
 	c.JSON(http.StatusOK, gin.H{"task_id": taskID})
 
 	go func() {
-		reader, err := h.images.PullImage(c.Request.Context(), req.Name)
+		reader, err := h.images.PullImage(c.Request.Context(), userID, req.Name)
 		if err != nil {
 			h.hub.Broadcast(ws.Message{Type: "pull_progress", Data: map[string]any{
 				"task_id": taskID, "status": "error", "error": err.Error(),

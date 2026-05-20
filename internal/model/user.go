@@ -15,6 +15,7 @@ type UserSettings struct {
 	Theme                string `json:"theme"`
 	QuadletDir           string `json:"quadletDir"`
 	PodmanSocket         string `json:"podmanSocket"`
+	MirrorRegistry       string `json:"mirrorRegistry"`
 	ItemsPerPage         int    `json:"itemsPerPage"`
 	AutoRefreshSeconds   int    `json:"autoRefreshSeconds"`
 	DefaultRestartPolicy string `json:"defaultRestartPolicy"`

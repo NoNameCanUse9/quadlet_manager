@@ -84,8 +84,8 @@ export const api = {
 
   // Volumes
   listVolumes: () => request<VolumeInfo[]>('/volumes'),
-  createVolume: (name: string, labels?: Record<string, string>) =>
-    request('/volumes', { method: 'POST', body: JSON.stringify({ name, labels }) }),
+  createVolume: (name: string, labels?: Record<string, string>, device?: string) =>
+    request('/volumes', { method: 'POST', body: JSON.stringify({ name, labels, device: device || '' }) }),
   removeVolume: (name: string, force = false) =>
     request(`/volumes/${name}?force=${force}`, { method: 'DELETE' }),
   inspectVolume: (name: string) => request<VolumeInspect>(`/volumes/${name}/inspect`),
@@ -280,6 +280,7 @@ export interface UserSettings {
   theme: string
   quadlet_dir: string
   podman_socket: string
+  mirror_registry: string
   items_per_page: number
   auto_refresh_seconds: number
   default_restart_policy: string

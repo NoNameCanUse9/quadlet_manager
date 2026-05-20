@@ -118,6 +118,7 @@
     "noData": "No volumes found",
     "createTitle": "Create Volume",
     "namePlaceholder": "Volume name",
+    "devicePlaceholder": "Host path (optional, e.g. /data/nginx)",
     "removeConfirm": "Remove volume \"{{name}}\"?"
   },
   "networks": {
@@ -239,6 +240,7 @@
     "rootless": "Rootless Mode",
     "quadletDir": "Quadlet Directory",
     "podmanSocket": "Podman Socket",
+    "mirrorRegistry": "Mirror Registry",
     "save": "Save",
     "about": {
       "title": "About",

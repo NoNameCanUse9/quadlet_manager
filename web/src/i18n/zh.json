@@ -118,6 +118,7 @@
     "noData": "未找到存储卷",
     "createTitle": "创建存储卷",
     "namePlaceholder": "存储卷名称",
+    "devicePlaceholder": "宿主机路径（可选，如 /data/nginx）",
     "removeConfirm": "确认删除存储卷 \"{{name}}\" 吗？"
   },
   "networks": {
@@ -239,6 +240,7 @@
     "rootless": "Rootless 模式",
     "quadletDir": "Quadlet 目录",
     "podmanSocket": "Podman Socket",
+    "mirrorRegistry": "镜像站",
     "save": "保存",
     "about": {
       "title": "关于",

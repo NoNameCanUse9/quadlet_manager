@@ -18,10 +18,10 @@ func NewSettingsStore(db *sql.DB) *SettingsStore {
 
 func (s *SettingsStore) GetByUserID(userID int64) (*model.UserSettings, error) {
 	st := &model.UserSettings{}
-	err := s.db.QueryRow(`SELECT user_id, language, theme, quadlet_dir, podman_socket,
+	err := s.db.QueryRow(`SELECT user_id, language, theme, quadlet_dir, podman_socket, mirror_registry,
 		items_per_page, auto_refresh_seconds, default_restart_policy, notify_on_failure
 		FROM user_settings WHERE user_id = ?`, userID).Scan(
-		&st.UserID, &st.Language, &st.Theme, &st.QuadletDir, &st.PodmanSocket,
+		&st.UserID, &st.Language, &st.Theme, &st.QuadletDir, &st.PodmanSocket, &st.MirrorRegistry,
 		&st.ItemsPerPage, &st.AutoRefreshSeconds, &st.DefaultRestartPolicy, &st.NotifyOnFailure,
 	)
 	if err == sql.ErrNoRows {
@@ -48,11 +48,11 @@ func (s *SettingsStore) GetByUserID(userID int64) (*model.UserSettings, error) {
 func (s *SettingsStore) Update(userID int64, fields map[string]interface{}) error {
 	allowed := map[string]bool{
 		"language": true, "theme": true, "quadlet_dir": true, "podman_socket": true,
-		"items_per_page": true, "auto_refresh_seconds": true,
+		"mirror_registry": true, "items_per_page": true, "auto_refresh_seconds": true,
 		"default_restart_policy": true, "notify_on_failure": true,
 	}
 	// Type validation per field
-	stringFields := map[string]bool{"language": true, "theme": true, "quadlet_dir": true, "podman_socket": true, "default_restart_policy": true}
+	stringFields := map[string]bool{"language": true, "theme": true, "quadlet_dir": true, "podman_socket": true, "mirror_registry": true, "default_restart_policy": true}
 	intFields := map[string]bool{"items_per_page": true, "auto_refresh_seconds": true}
 	boolFields := map[string]bool{"notify_on_failure": true}
 

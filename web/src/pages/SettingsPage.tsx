@@ -12,6 +12,7 @@ export function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings | null>(null)
   const [quadletDir, setQuadletDir] = useState('')
   const [podmanSocket, setPodmanSocket] = useState('')
+  const [mirrorRegistry, setMirrorRegistry] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -20,6 +21,7 @@ export function SettingsPage() {
       setSettings(s)
       setQuadletDir(s.quadlet_dir || '')
       setPodmanSocket(s.podman_socket || '')
+      setMirrorRegistry(s.mirror_registry || '')
     }).catch(() => {})
   }, [])
 
@@ -107,6 +109,25 @@ export function SettingsPage() {
             <button
               disabled={saving || podmanSocket === (settings?.podman_socket || '')}
               onClick={() => save({ podman_socket: podmanSocket })}
+              className="px-3 py-1.5 text-sm rounded bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t('settings.save')}
+            </button>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow label={t('settings.mirrorRegistry')}>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={mirrorRegistry}
+              onChange={(e) => setMirrorRegistry(e.target.value)}
+              placeholder="e.g. docker.io"
+              className="bg-surface-raised border border-border rounded px-3 py-1.5 text-sm text-text-primary font-mono w-96 focus:outline-none focus:border-accent"
+            />
+            <button
+              disabled={saving || mirrorRegistry === (settings?.mirror_registry || '')}
+              onClick={() => save({ mirror_registry: mirrorRegistry })}
               className="px-3 py-1.5 text-sm rounded bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('settings.save')}

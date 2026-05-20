@@ -111,7 +111,7 @@ func main() {
 	containerSvc := service.NewContainerService(podmanProvider)
 	fileSvc := service.NewFileService(quadletFS, systemdProvider, settingsStore, cfg.QuadletDir)
 	orchestrator := service.NewContainerOrchestrator(systemdProvider, podmanProvider)
-	imageSvc := service.NewImageService(podmanProvider)
+	imageSvc := service.NewImageService(podmanProvider, settingsStore)
 	volumeSvc := service.NewVolumeService(podmanProvider)
 	networkSvc := service.NewNetworkService(podmanProvider)
 	backupSvc := service.NewBackupService(quadletFS, settingsStore)
