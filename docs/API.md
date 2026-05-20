@@ -430,8 +430,10 @@ Authorization: Bearer <token>
 
 **请求**:
 ```json
-{ "name": "docker.io/nginx:latest" }
+{ "name": "nginx:latest" }
 ```
+
+**说明**: 若用户设置了 `mirrorRegistry`（如 `docker.io`），且镜像名无 registry 前缀，将自动拼接为 `docker.io/nginx:latest`。已含 registry 前缀的镜像名（如 `ghcr.io/foo/bar`）不受影响。
 
 ### 删除镜像
 
@@ -460,8 +462,10 @@ Authorization: Bearer <token>
 
 **请求**:
 ```json
-{ "name": "mydata", "labels": { "app": "myapp" } }
+{ "name": "mydata", "labels": { "app": "myapp" }, "device": "/path/on/host" }
 ```
+
+**说明**: `device` 为可选字段，指定宿主机目录路径后将创建 bind mount 类型的卷（`Driver: local`）。留空则创建普通卷。
 
 ### 删除存储卷
 
@@ -627,6 +631,7 @@ Authorization: Bearer <token>
   "theme": "dark",
   "quadletDir": "",
   "podmanSocket": "",
+  "mirrorRegistry": "",
   "itemsPerPage": 20,
   "autoRefreshSeconds": 30,
   "defaultRestartPolicy": "always",
@@ -646,6 +651,7 @@ Authorization: Bearer <token>
 {
   "language": "zh",
   "quadlet_dir": "/home/user/custom-systemd",
+  "mirror_registry": "docker.io",
   "items_per_page": 50
 }
 ```

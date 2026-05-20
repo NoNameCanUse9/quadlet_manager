@@ -73,7 +73,7 @@ internal/
 | `container.go` | Podman 容器模型。 | `ContainerInfo` (ID/Names/Image/State/Status), `ContainerStats` (CPU/Mem/Net), `ContainerInspect` | service, handler, provider |
 | `quadlet.go` | Quadlet 文件模型。 | `QuadletFile` (Name/Path/Content/ModTime/Type) | service, handler, provider |
 | `stats.go` | 统计聚合模型。 | `SystemStats` (Containers []ContainerStats) | handler, ws |
-| `user.go` | 用户和设置模型。 | `User` (ID/Username/Role/CreatedAt), `UserSettings` (9 个字段) | auth, store, handler |
+| `user.go` | 用户和设置模型。 | `User` (ID/Username/Role/CreatedAt), `UserSettings` (10 个字段) | auth, store, handler |
 
 **注意**: model 包是纯数据定义，不包含业务逻辑。所有层都可以导入 model。
 
@@ -104,8 +104,8 @@ internal/
 | `file_service.go` | **Quadlet 文件 CRUD**。`ApplyFile` 是核心：写入文件→DaemonReload→StartUnit。`ValidateContent` 解析 INI 并检查 Image 是否存在。定义 `SettingsLookup` 接口用于用户目录解析。`resolveFS` 使用 sync.Map 缓存用户目录（10s TTL）。 | `ListFiles()`, `ReadFile()`, `WriteFile()`, `DeleteFile()`, `ApplyFile()`, `ValidateContent()` | handler/file_handler.go |
 | `container_service.go` | **容器操作封装**。直接代理到 PodmanProvider。 | `ListContainers()`, `GetContainerLogs()`, `PauseContainer()`, `InspectContainer()` | handler/container_handler.go |
 | `orchestrator.go` | **容器编排器**。协调 systemd 和 podman：判断容器是否由 Quadlet 管理（`IsManaged`），如果是则通过 systemd 控制，否则直接操作 podman。 | `Start()`, `Stop()`, `Restart()`, `Remove()`, `IsManaged()` | handler/container_handler.go |
-| `image_service.go` | **镜像操作封装**。代理到 PodmanProvider。 | `ListImages()`, `PullImage()`, `RemoveImage()`, `InspectImage()` | handler/image_handler.go |
-| `volume_service.go` | **存储卷操作封装**。 | `ListVolumes()`, `CreateVolume()`, `RemoveVolume()`, `InspectVolume()` | handler/volume_handler.go |
+| `image_service.go` | **镜像操作封装**。代理到 PodmanProvider。`PullImage` 支持镜像站代理：查询用户设置的 `mirrorRegistry`，若镜像名无 registry 前缀则自动拼接。 | `ListImages()`, `PullImage(ctx, userID, name)`, `RemoveImage()`, `InspectImage()` | handler/image_handler.go |
+| `volume_service.go` | **存储卷操作封装**。`CreateVolume` 支持 `opts` 参数，指定宿主机路径时创建 bind mount 卷。 | `ListVolumes()`, `CreateVolume(ctx, name, labels, opts)`, `RemoveVolume()`, `InspectVolume()` | handler/volume_handler.go |
 | `network_service.go` | **网络操作封装**。 | `ListNetworks()`, `CreateNetwork()`, `RemoveNetwork()`, `InspectNetwork()` | handler/network_handler.go |
 | `backup_service.go` | **备份服务**。`Export` 将 Quadlet 文件打包为 tar.gz。`Import` 解压并写入。 | `Export()`, `Import()` | handler/backup_handler.go |
 | `service_test.go` | 单元启动/列表、文件 CRUD/验证、编排器测试。 | - | - |
@@ -151,6 +151,8 @@ internal/
 | `settings_store.go` | 用户设置表 CRUD。`GetByUserID`（不存在时自动创建默认行并直接返回，无递归查询）/`Update`（带字段类型验证）。 | auth/service.go, service 层 (via SettingsLookup) |
 | `migrations/001_init.up.sql` | 初始 schema: users + user_settings + config 三张表。 | db.go (embed) |
 | `migrations/001_init.down.sql` | 回滚脚本。 | db.go (embed) |
+| `migrations/002_add_mirror_registry.up.sql` | 新增 `mirror_registry` 列。 | db.go (embed) |
+| `migrations/002_add_mirror_registry.down.sql` | 回滚脚本。 | db.go (embed) |
 | `*_test.go` | Store 层测试（内存数据库）。 | - | - |
 
 **迁移机制**: 在 `migrations/` 目录创建 `002_xxx.up.sql` 和 `002_xxx.down.sql`，重启服务自动执行。

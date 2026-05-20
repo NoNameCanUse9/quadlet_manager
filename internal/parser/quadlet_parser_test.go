@@ -159,3 +159,13 @@ func TestGeneratorProducesValidINI(t *testing.T) {
 		t.Error("missing second PublishPort")
 	}
 }
+
+func BenchmarkParseQuadletFile(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := ParseQuadletFile(sampleContainer)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+

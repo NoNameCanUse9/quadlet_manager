@@ -1,5 +1,31 @@
 # 变更日志
 
+## 2026-05-21 — 创建卷支持指定宿主机路径
+
+- **Provider** (`provider/podman_socket.go`)：`CreateVolume` 新增 `opts` 参数，传入时设置 `Driver: "local"` + `Options: {device, type: "none", o: "bind"}`，实现 bind mount
+- **接口** (`provider/podman.go`)：`CreateVolume` 签名新增 `opts map[string]string`
+- **Mock** (`provider/mock_podman.go`)：同步更新签名
+- **Service** (`service/volume_service.go`)：透传 `opts` 参数
+- **Handler** (`handler/volume_handler.go`)：请求新增可选 `device` 字段，非空时转换为 Podman volume options
+- **前端**：VolumesPage 创建弹窗新增宿主机路径输入框，API client 和 hook 补全 `device` 参数，i18n 补全翻译
+
+---
+
+## 2026-05-21 — 镜像站代理设置
+
+- **数据库迁移** (`002_add_mirror_registry.*`)：`user_settings` 表新增 `mirror_registry TEXT DEFAULT ''` 列
+- **Model** (`model/user.go`)：`UserSettings` 新增 `MirrorRegistry` 字段
+- **Store** (`store/settings_store.go`)：`GetByUserID` 查询和 `Update` 白名单加入 `mirror_registry`
+- **ImageService** (`service/image_service.go`)：
+  - 新增 `SettingsLookup` 依赖，`NewImageService(podman, settings)` 接收 settings store
+  - `PullImage(ctx, userID, name)` 增加 userID 参数，pull 前查询用户设置
+  - `applyMirror()` 方法：若配置了 `mirrorRegistry` 且镜像名无 registry 前缀（不含 `.`），自动拼接为 `mirrorRegistry/name`
+- **Handler** (`handler/image_handler.go`)：`PullImage` 从 gin context 提取 `user_id` 传给 service
+- **main.go**：`NewImageService` 传入 `settingsStore`
+- **前端**：SettingsPage 新增镜像站输入框，`UserSettings` 接口和 i18n 补全
+
+---
+
 ## 2026-05-20 — 性能优化：内存、数据库查询、连接池
 
 ### `c962187` perf: optimize memory, DB queries, and connection pooling
