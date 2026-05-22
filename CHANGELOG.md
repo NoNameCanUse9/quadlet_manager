@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.1.1...v1.2.0) (2026-05-22)
+
+
+### Features
+
+* OTA self-update — download, verify, replace binary and restart ([2f7348c](https://github.com/NoNameCanUse9/quadlet_manager/commit/2f7348cd4b1363a93f97aff94cdd4e003382c297))
+
 ### [1.1.1](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.1.0...v1.1.1) (2026-05-22)
 
 ## [1.1.0](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.0.4...v1.1.0) (2026-05-22)
