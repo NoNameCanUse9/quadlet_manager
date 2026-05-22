@@ -28,7 +28,7 @@
 - **资源管理**: 镜像拉取/删除、存储卷/网络 CRUD
 - **用户认证**: JWT 认证，admin/user 角色，用户级资源隔离
 - **实时推送**: WebSocket 推送容器统计和单元状态变更
-- **OTA 更新检查**: 定期检查 GitHub Release，前端通知新版本，Settings 页面查看详情
+- **OTA 自更新**: 定期检查 GitHub Release，前端通知新版本，支持一键下载替换二进制并自动重启（需 systemd）
 
 ### 1.2 技术栈
 
@@ -173,7 +173,7 @@ internal/
 | `backup_handler.go` | 备份导出/导入。导入限制 50MB。 | /api/v1/backup/* | JWT |
 | `settings_handler.go` | 用户设置读取/更新。更新时验证 quadlet_dir 必须是存在的绝对路径。 | /api/v1/settings | JWT |
 | `stats_handler.go` | 容器统计快照。 | /api/v1/stats | JWT |
-| `system_handler.go` | 系统信息（rootless/port/quadletDir/version）+ 更新检查。 | /api/v1/system/info, /api/v1/system/update, /api/v1/system/update/check | JWT |
+| `system_handler.go` | 系统信息（rootless/port/quadletDir/version）+ 更新检查 + 自更新。 | /api/v1/system/info, /api/v1/system/update, /api/v1/system/update/check, /api/v1/system/update/apply | JWT |
 | `handler_test.go` | Handler 层集成测试（通过 httptest + Gin 路由）。 | - | - |
 | `auth_handler_test.go` | 认证 Handler 完整测试（17 个用例覆盖所有认证流程）。 | - | - |
 
@@ -214,7 +214,7 @@ internal/
 
 | 文件 | 作用 | 导出 | 被谁使用 |
 |------|------|------|----------|
-| `checker.go` | **更新检查器**。`Checker` 定期调用 GitHub Releases API 检查新版本，结果缓存在内存中。`Check()` 手动触发检查，`GetCached()` 获取缓存结果，`StartPeriodicCheck()` 启动后台 goroutine（每 24 小时）。使用 `semver` 进行版本比较，`dev` 版本始终认为有更新。 | `Checker`, `UpdateInfo`, `NewChecker()` | main.go, handler/system_handler.go |
+| `checker.go` | **更新检查器**。`Checker` 定期调用 GitHub Releases API 检查新版本，结果缓存在内存中。`Check()` 手动触发检查，`GetCached()` 获取缓存结果，`StartPeriodicCheck()` 启动后台 goroutine（每 24 小时）。`SelfUpdate()` 下载新版本二进制，SHA256 校验后替换当前可执行文件。使用 `semver` 进行版本比较，`dev` 版本始终认为有更新。支持 `GITHUB_TOKEN` 环境变量认证。 | `Checker`, `UpdateInfo`, `NewChecker()` | main.go, handler/system_handler.go |
 | `checker_test.go` | 版本比较测试（semver/非 semver/dev）、Mock HTTP Server 测试 Checker.Check 成功和网络错误。 | - | - |
 
 #### version/ — 版本号
@@ -295,7 +295,7 @@ web/
 | `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
 | `FilesPage.tsx` | **Quadlet 编排控制中心**（主路由 `/files`）。将新建、编辑器（CodeMirror）、向导表单（ConfigWizard）与 Systemd 单元管理（运行状态监控、一键启动/停止/重启、开机自启开关、一键 Deploy）深度合二为一的大一统交互面板。 | /files | useApp, useUnits |
 | `TerminalPage.tsx` | **Web 终端**。xterm.js 终端模拟器，通过 WebSocket 连接到 Podman exec 会话。 | /containers/:id/exec/:exec_id | api client |
-| `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。底部「关于」区块显示版本信息和更新检查。 | /settings | api client |
+| `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。底部「关于」区块显示版本信息、更新检查和一键自更新按钮。 | /settings | api client |
 | `AdminUsersPage.tsx` | **用户管理页面**（admin only）。列出用户，支持创建/删除/修改角色/重置密码。 | /admin/users | api client |
 | `BackupPage.tsx` | **备份页面**。导出 Quadlet 文件为 tar.gz，导入备份文件恢复。 | /backup | api client |
 
@@ -550,6 +550,7 @@ CREATE TABLE config (
 | GET | `/api/v1/system/info` | 系统信息（rootless, quadletDir, version） |
 | GET | `/api/v1/system/update` | 获取更新检查结果（缓存） |
 | POST | `/api/v1/system/update/check` | 手动触发更新检查 |
+| POST | `/api/v1/system/update/apply` | 下载并替换当前二进制，自动重启 |
 
 ### 5.4 单元管理
 
