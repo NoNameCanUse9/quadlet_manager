@@ -15,7 +15,11 @@ import (
 var execUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		return origin == "" || origin == "http://localhost:9090" || origin == "http://localhost:10000" || origin == "http://localhost:8080"
+		if origin == "" {
+			return true
+		}
+		host := r.Header.Get("Host")
+		return strings.HasPrefix(origin, "http://"+host) || strings.HasPrefix(origin, "https://"+host)
 	},
 }
 
