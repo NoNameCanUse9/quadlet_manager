@@ -59,6 +59,7 @@ export function VolumesPage() {
                     </button>
                     <button
                         onClick={() => refetch()}
+                        title={t('common.refresh')}
                         className="p-1.5 text-text-secondary hover:text-text-primary transition-colors"
                     >
                         <RefreshCw

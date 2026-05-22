@@ -129,7 +129,7 @@ export function ContainersPage() {
             <option value="compose">{t('containers.typeCompose')}</option>
             <option value="podman">{t('containers.typePodman')}</option>
           </select>
-          <button onClick={() => refetch()} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
+          <button onClick={() => refetch()} title={t('common.refresh')} className="p-1.5 text-text-secondary hover:text-text-primary transition-colors">
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
           <button

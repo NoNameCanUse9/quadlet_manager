@@ -151,6 +151,7 @@ export function AdminUsersPage() {
                     {u.id !== currentUser?.id && (
                       <button
                         onClick={() => handleDelete(u.id)}
+                        title={t('common.remove') || 'Remove'}
                         className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
                       >
                         <Trash2 size={14} />
