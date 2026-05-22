@@ -332,11 +332,9 @@ func (p *SocketPodmanProvider) InspectImage(_ context.Context, id string) (map[s
 }
 
 func (p *SocketPodmanProvider) ListVolumes(_ context.Context) ([]model.VolumeInfo, error) {
-	var resp struct {
-		Volumes []model.VolumeInfo `json:"Volumes"`
-	}
-	err := p.doJSON("GET", "/volumes/json", nil, &resp)
-	return resp.Volumes, err
+	var volumes []model.VolumeInfo
+	err := p.doJSON("GET", "/volumes/json", nil, &volumes)
+	return volumes, err
 }
 
 func (p *SocketPodmanProvider) CreateVolume(_ context.Context, name string, labels map[string]string, opts map[string]string) (*model.VolumeInfo, error) {
