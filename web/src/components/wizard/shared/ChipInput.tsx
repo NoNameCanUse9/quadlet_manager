@@ -87,7 +87,7 @@ export function ChipInput({
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, i) => (
-          <div key={i}>
+          <div key={i} className={editingIndex === i ? 'flex-1 min-w-[200px]' : ''}>
             {editingIndex === i ? (
               <input
                 ref={inputRef}
@@ -96,7 +96,7 @@ export function ChipInput({
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="bg-surface-raised border border-accent rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none w-32"
+                className="bg-surface-raised border border-accent rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none w-full min-w-[200px]"
               />
             ) : (
               <span
@@ -129,7 +129,7 @@ export function ChipInput({
             onBlur={handleAddBlur}
             onKeyDown={handleAddKeyDown}
             placeholder={addPlaceholder}
-            className="bg-surface-raised border border-border rounded px-2 py-0.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent w-32"
+            className="bg-surface-raised border border-border rounded px-2 py-0.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent w-full min-w-[200px]"
           />
         ) : (
           <button
