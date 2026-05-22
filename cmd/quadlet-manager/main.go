@@ -143,7 +143,7 @@ func main() {
 	})
 
 	// Initialize update checker
-	updateChecker := updater.NewChecker(version.Version, "choken/quadlet-manager")
+	updateChecker := updater.NewChecker(version.Version, "NoNameCanUse9/quadlet_manager")
 	updateChecker.StartPeriodicCheck(context.Background())
 
 	// Initialize handlers
