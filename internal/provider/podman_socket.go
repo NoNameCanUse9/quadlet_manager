@@ -57,6 +57,9 @@ func (p *SocketPodmanProvider) Connect(_ context.Context) error {
 	if p.apiVersion == "" {
 		p.apiVersion = "v5.0.0"
 	}
+	if !strings.HasPrefix(p.apiVersion, "v") {
+		p.apiVersion = "v" + p.apiVersion
+	}
 	return nil
 }
 
