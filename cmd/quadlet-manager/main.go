@@ -143,7 +143,7 @@ func main() {
 	})
 
 	// Initialize update checker
-	updateChecker := updater.NewChecker(version.Version, "NoNameCanUse9/quadlet_manager")
+	updateChecker := updater.NewChecker(version.Version, "NoNameCanUse9/quadlet_manager", os.Getenv("GITHUB_TOKEN"))
 	updateChecker.StartPeriodicCheck(context.Background())
 
 	// Initialize handlers

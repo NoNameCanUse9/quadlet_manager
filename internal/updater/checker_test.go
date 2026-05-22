@@ -144,7 +144,7 @@ func TestChecker_Check_NetworkError(t *testing.T) {
 }
 
 func TestChecker_GetCached(t *testing.T) {
-	c := NewChecker("v1.0.0", "test/repo")
+	c := NewChecker("v1.0.0", "test/repo", "")
 	if c.GetCached() != nil {
 		t.Error("expected nil cached before first check")
 	}

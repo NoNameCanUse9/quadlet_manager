@@ -44,6 +44,7 @@ type githubAsset struct {
 type Checker struct {
 	currentVersion string
 	githubRepo     string
+	token          string // optional GitHub token for higher rate limits
 	mu             sync.RWMutex
 	cached         *UpdateInfo
 	checkInterval  time.Duration
@@ -53,10 +54,12 @@ type Checker struct {
 
 // NewChecker creates a new update checker.
 // githubRepo is "owner/repo" (e.g. "choken/quadlet-manager").
-func NewChecker(currentVersion, githubRepo string) *Checker {
+// token is an optional GitHub personal access token.
+func NewChecker(currentVersion, githubRepo, token string) *Checker {
 	return &Checker{
 		currentVersion: currentVersion,
 		githubRepo:     githubRepo,
+		token:          token,
 		checkInterval:  24 * time.Hour,
 		httpClient:     &http.Client{Timeout: 10 * time.Second},
 		baseURL:        "https://api.github.com/repos",
@@ -71,6 +74,9 @@ func (c *Checker) Check(ctx context.Context) (*UpdateInfo, error) {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("User-Agent", "quadlet-manager/"+c.currentVersion)
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
