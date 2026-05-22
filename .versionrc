@@ -1,0 +1,12 @@
+{
+  "types": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "refactor", "section": "Refactoring" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "ci", "section": "CI/CD" },
+    { "type": "chore", "hidden": true }
+  ],
+  "commitUrlFormat": "https://github.com/NoNameCanUse9/quadlet_manager/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/NoNameCanUse9/quadlet_manager/compare/{{previousTag}}...{{currentTag}}"
+}

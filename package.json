@@ -1,0 +1,30 @@
+{
+  "name": "quadlet-manager",
+  "version": "1.0.2",
+  "description": "<div align=\"center\">",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NoNameCanUse9/quadlet_manager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NoNameCanUse9/quadlet_manager/issues"
+  },
+  "homepage": "https://github.com/NoNameCanUse9/quadlet_manager#readme",
+  "devDependencies": {
+    "standard-version": "^9.5.0"
+  }
+}
