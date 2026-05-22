@@ -205,6 +205,7 @@ func main() {
 		protected.GET("/system/info", systemH.GetSystemInfo)
 		protected.GET("/system/update", systemH.GetUpdateInfo)
 		protected.POST("/system/update/check", systemH.CheckUpdate)
+		protected.POST("/system/update/apply", systemH.ApplyUpdate)
 
 		protected.GET("/units", unitH.ListUnits)
 		protected.GET("/units/:name", unitH.GetUnit)

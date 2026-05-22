@@ -252,6 +252,10 @@
       "checkUpdate": "检查更新",
       "goToDownload": "前往下载",
       "downloadBinary": "下载二进制",
+      "updateNow": "立即更新",
+      "updating": "更新中...",
+      "updateSuccess": "更新完成，正在重启...",
+      "updateFailed": "更新失败",
       "lastChecked": "上次检查",
       "releaseNotes": "更新日志"
     }

@@ -29,6 +29,7 @@ export const api = {
   getSystemInfo: () => request<SystemInfo>('/system/info'),
   getUpdateInfo: () => request<UpdateInfo>('/system/update'),
   checkUpdate: () => request<UpdateInfo>('/system/update/check', { method: 'POST' }),
+  applyUpdate: () => request<{ message: string }>('/system/update/apply', { method: 'POST' }),
 
   // Units
   listUnits: () => request<UnitStatus[]>('/units'),

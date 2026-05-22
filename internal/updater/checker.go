@@ -2,10 +2,15 @@ package updater
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -153,6 +158,106 @@ func (c *Checker) StartPeriodicCheck(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+// SelfUpdate downloads the latest binary, verifies checksum, and replaces the current executable.
+func (c *Checker) SelfUpdate(ctx context.Context) error {
+	info := c.GetCached()
+	if info == nil || !info.HasUpdate || info.DownloadURL == "" {
+		return fmt.Errorf("no update available or download URL missing")
+	}
+
+	// Get current executable path
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("get executable path: %w", err)
+	}
+	exePath, err = filepath.EvalSymlinks(exePath)
+	if err != nil {
+		return fmt.Errorf("resolve symlink: %w", err)
+	}
+
+	// Download new binary
+	binData, err := c.download(ctx, info.DownloadURL)
+	if err != nil {
+		return fmt.Errorf("download binary: %w", err)
+	}
+
+	// Download and verify checksum
+	checksumURL := strings.TrimSuffix(info.DownloadURL, filepath.Base(info.DownloadURL)) + "checksums.txt"
+	checksumData, err := c.download(ctx, checksumURL)
+	if err == nil {
+		expectedHash := parseChecksum(checksumData, filepath.Base(info.DownloadURL))
+		if expectedHash != "" {
+			actualHash := sha256Hex(binData)
+			if actualHash != expectedHash {
+				return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedHash, actualHash)
+			}
+		}
+	}
+	// Checksum verification is optional — proceed if checksums.txt not found
+
+	// Write to temp file in same directory
+	dir := filepath.Dir(exePath)
+	tmpFile, err := os.CreateTemp(dir, ".quadlet-manager-update-*")
+	if err != nil {
+		return fmt.Errorf("create temp file: %w", err)
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath) // cleanup on failure
+
+	if _, err := tmpFile.Write(binData); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("write temp file: %w", err)
+	}
+	tmpFile.Close()
+
+	// Match permissions of current binary
+	if info, err := os.Stat(exePath); err == nil {
+		os.Chmod(tmpPath, info.Mode())
+	}
+
+	// Atomic rename
+	if err := os.Rename(tmpPath, exePath); err != nil {
+		return fmt.Errorf("replace binary: %w", err)
+	}
+
+	log.Printf("updater: self-update to %s complete", info.Latest)
+	return nil
+}
+
+func (c *Checker) download(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return io.ReadAll(resp.Body)
+}
+
+func sha256Hex(data []byte) string {
+	h := sha256.Sum256(data)
+	return hex.EncodeToString(h[:])
+}
+
+func parseChecksum(checksumData []byte, filename string) string {
+	for _, line := range strings.Split(string(checksumData), "\n") {
+		parts := strings.Fields(line)
+		if len(parts) == 2 && parts[1] == filename {
+			return parts[0]
+		}
+	}
+	return ""
 }
 
 // compareVersions sets HasUpdate based on semver comparison.

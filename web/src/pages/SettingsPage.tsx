@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useApp } from '@/store/useApp'
 import { api, type UserSettings, type UpdateInfo } from '@/api/client'
+import { toast } from 'sonner'
 import i18n from '@/i18n'
 
 export function SettingsPage() {
@@ -35,6 +36,16 @@ export function SettingsPage() {
     mutationFn: () => api.checkUpdate(),
     onSuccess: (data) => {
       queryClient.setQueryData(['update-info'], data)
+    },
+  })
+
+  const applyMutation = useMutation({
+    mutationFn: () => api.applyUpdate(),
+    onSuccess: () => {
+      toast.success(t('settings.about.updateSuccess'))
+    },
+    onError: () => {
+      toast.error(t('settings.about.updateFailed'))
     },
   })
 
@@ -191,6 +202,15 @@ export function SettingsPage() {
             >
               {t('settings.about.downloadBinary')}
             </a>
+          )}
+          {updateInfo?.hasUpdate && updateInfo.downloadUrl && (
+            <button
+              onClick={() => applyMutation.mutate()}
+              disabled={applyMutation.isPending}
+              className="px-3 py-1.5 text-sm rounded bg-green-500/10 text-green-400 hover:bg-green-500/20 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {applyMutation.isPending ? t('settings.about.updating') : t('settings.about.updateNow')}
+            </button>
           )}
           {updateInfo?.hasUpdate && updateInfo.releaseUrl && (
             <a

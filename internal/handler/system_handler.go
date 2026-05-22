@@ -2,7 +2,10 @@ package handler
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/choken/quadlet-manager/internal/config"
 	"github.com/choken/quadlet-manager/internal/service"
@@ -80,4 +83,24 @@ func (h *SystemHandler) CheckUpdate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, info)
+}
+
+// ApplyUpdate downloads and replaces the current binary, then exits for restart.
+func (h *SystemHandler) ApplyUpdate(c *gin.Context) {
+	if h.checker == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "updater not configured"})
+		return
+	}
+	if err := h.checker.SelfUpdate(context.Background()); err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "update complete, restarting"})
+
+	// Exit after response is sent — systemd will restart the service
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		log.Println("updater: exiting for restart")
+		os.Exit(0)
+	}()
 }
