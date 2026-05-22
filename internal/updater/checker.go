@@ -78,6 +78,9 @@ func (c *Checker) Check(ctx context.Context) (*UpdateInfo, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+		return nil, fmt.Errorf("github api rate limited (status %d), will retry later", resp.StatusCode)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("github api status %d", resp.StatusCode)
 	}
@@ -128,7 +131,7 @@ func (c *Checker) StartPeriodicCheck(ctx context.Context) {
 	go func() {
 		// Initial check on startup
 		if _, err := c.Check(ctx); err != nil {
-			log.Printf("updater: initial check failed: %v", err)
+			log.Printf("updater: check deferred: %v", err)
 		}
 		ticker := new(time.Ticker)
 		*ticker = *time.NewTicker(c.checkInterval)
@@ -139,7 +142,7 @@ func (c *Checker) StartPeriodicCheck(ctx context.Context) {
 				return
 			case <-ticker.C:
 				if _, err := c.Check(ctx); err != nil {
-					log.Printf("updater: check failed: %v", err)
+					log.Printf("updater: check deferred: %v", err)
 				}
 			}
 		}

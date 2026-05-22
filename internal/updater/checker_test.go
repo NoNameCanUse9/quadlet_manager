@@ -102,6 +102,29 @@ func TestChecker_Check_Success(t *testing.T) {
 	}
 }
 
+func TestChecker_Check_RateLimited(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := &Checker{
+		currentVersion: "v1.0.0",
+		githubRepo:     "test/repo",
+		checkInterval:  24 * time.Hour,
+		httpClient:     srv.Client(),
+		baseURL:        srv.URL + "/repos",
+	}
+
+	info, err := c.Check(context.Background())
+	if err == nil {
+		t.Error("expected error for rate limit")
+	}
+	if info != nil {
+		t.Error("expected nil info on rate limit")
+	}
+}
+
 func TestChecker_Check_NetworkError(t *testing.T) {
 	c := &Checker{
 		currentVersion: "v1.0.0",
