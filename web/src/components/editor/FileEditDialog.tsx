@@ -180,6 +180,7 @@ export function FileEditDialog({ filename, onClose, onSaved, onDeleted }: FileEd
             <span className="w-[1px] h-5 bg-border mx-1" />
             <button
               onClick={onClose}
+              title={t('common.close') || 'Close'}
               className="p-2 text-text-muted hover:text-text-primary transition-colors rounded hover:bg-surface-raised"
             >
               <X size={16} />
