@@ -68,6 +68,8 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -77,10 +79,22 @@ jobs:
           cd artifacts
           sha256sum */* > ../checksums.txt
 
+      - name: Extract changelog
+        id: changelog
+        run: |
+          # Extract the latest version section from CHANGELOG.md
+          VERSION=${GITHUB_REF#refs/tags/}
+          NOTES=$(sed -n "/^### \[$VERSION\]/,/^### \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
+          if [ -z "$NOTES" ]; then
+            NOTES="See [CHANGELOG.md](CHANGELOG.md) for details."
+          fi
+          # Write to file for multi-line content
+          echo "$NOTES" > /tmp/release-notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: /tmp/release-notes.md
           files: |
             artifacts/*/*
             checksums.txt
-          generate_release_notes: true
