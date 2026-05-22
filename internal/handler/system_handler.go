@@ -67,13 +67,16 @@ func (h *SystemHandler) CheckUpdate(c *gin.Context) {
 	}
 	info, err := h.checker.Check(context.Background())
 	if err != nil {
-		// Return cached if available, otherwise error
+		// Return cached if available, otherwise no-update placeholder
 		cached := h.checker.GetCached()
 		if cached != nil {
 			c.JSON(http.StatusOK, cached)
 			return
 		}
-		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		c.JSON(http.StatusOK, updater.UpdateInfo{
+			Current:   version.Version,
+			HasUpdate: false,
+		})
 		return
 	}
 	c.JSON(http.StatusOK, info)
