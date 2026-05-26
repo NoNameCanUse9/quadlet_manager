@@ -92,6 +92,7 @@ func (h *SystemHandler) ApplyUpdate(c *gin.Context) {
 		return
 	}
 	if err := h.checker.SelfUpdate(context.Background()); err != nil {
+		log.Printf("updater: self-update failed: %v", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
