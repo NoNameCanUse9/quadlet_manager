@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.0...v1.2.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* ListImages null RepoTags causing frontend crash ([db4b46b](https://github.com/NoNameCanUse9/quadlet_manager/commit/db4b46ba36553d548b61e8ef18b96bd5a4cd22a4))
+
+
+### Documentation
+
+* update CLAUDE.md with self-update feature ([fe71167](https://github.com/NoNameCanUse9/quadlet_manager/commit/fe71167954dd9e899b19fac2e8385ec818bfafef))
+* update provider and WebSocket documentation ([aeed1fa](https://github.com/NoNameCanUse9/quadlet_manager/commit/aeed1faed58e15e04bf1acc6338d85b1ef5903f4))
+
 ## [1.2.0](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.1.1...v1.2.0) (2026-05-22)
 
 
