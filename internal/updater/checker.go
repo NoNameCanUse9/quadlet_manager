@@ -163,8 +163,14 @@ func (c *Checker) StartPeriodicCheck(ctx context.Context) {
 // SelfUpdate downloads the latest binary, verifies checksum, and replaces the current executable.
 func (c *Checker) SelfUpdate(ctx context.Context) error {
 	info := c.GetCached()
-	if info == nil || !info.HasUpdate || info.DownloadURL == "" {
-		return fmt.Errorf("no update available or download URL missing")
+	if info == nil {
+		return fmt.Errorf("no update info cached, please check for updates first")
+	}
+	if !info.HasUpdate {
+		return fmt.Errorf("already on latest version %s", info.Current)
+	}
+	if info.DownloadURL == "" {
+		return fmt.Errorf("no download URL available for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
 	// Get current executable path
@@ -177,15 +183,20 @@ func (c *Checker) SelfUpdate(ctx context.Context) error {
 		return fmt.Errorf("resolve symlink: %w", err)
 	}
 
-	// Download new binary
-	binData, err := c.download(ctx, info.DownloadURL)
+	log.Printf("updater: downloading %s", info.DownloadURL)
+
+	// Use longer timeout for download (5 min)
+	dlClient := &http.Client{Timeout: 5 * time.Minute}
+	binData, err := c.downloadWith(dlClient, ctx, info.DownloadURL)
 	if err != nil {
 		return fmt.Errorf("download binary: %w", err)
 	}
 
+	log.Printf("updater: downloaded %d bytes, verifying checksum", len(binData))
+
 	// Download and verify checksum
 	checksumURL := strings.TrimSuffix(info.DownloadURL, filepath.Base(info.DownloadURL)) + "checksums.txt"
-	checksumData, err := c.download(ctx, checksumURL)
+	checksumData, err := c.downloadWith(dlClient, ctx, checksumURL)
 	if err == nil {
 		expectedHash := parseChecksum(checksumData, filepath.Base(info.DownloadURL))
 		if expectedHash != "" {
@@ -193,15 +204,15 @@ func (c *Checker) SelfUpdate(ctx context.Context) error {
 			if actualHash != expectedHash {
 				return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedHash, actualHash)
 			}
+			log.Printf("updater: checksum verified")
 		}
 	}
-	// Checksum verification is optional — proceed if checksums.txt not found
 
 	// Write to temp file in same directory
 	dir := filepath.Dir(exePath)
 	tmpFile, err := os.CreateTemp(dir, ".quadlet-manager-update-*")
 	if err != nil {
-		return fmt.Errorf("create temp file: %w", err)
+		return fmt.Errorf("create temp file in %s: %w", dir, err)
 	}
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath) // cleanup on failure
@@ -213,13 +224,13 @@ func (c *Checker) SelfUpdate(ctx context.Context) error {
 	tmpFile.Close()
 
 	// Match permissions of current binary
-	if info, err := os.Stat(exePath); err == nil {
-		os.Chmod(tmpPath, info.Mode())
+	if fi, err := os.Stat(exePath); err == nil {
+		os.Chmod(tmpPath, fi.Mode())
 	}
 
 	// Atomic rename
 	if err := os.Rename(tmpPath, exePath); err != nil {
-		return fmt.Errorf("replace binary: %w", err)
+		return fmt.Errorf("replace binary (%s -> %s): %w", tmpPath, exePath, err)
 	}
 
 	log.Printf("updater: self-update to %s complete", info.Latest)
@@ -227,6 +238,10 @@ func (c *Checker) SelfUpdate(ctx context.Context) error {
 }
 
 func (c *Checker) download(ctx context.Context, url string) ([]byte, error) {
+	return c.downloadWith(c.httpClient, ctx, url)
+}
+
+func (c *Checker) downloadWith(client *http.Client, ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -234,13 +249,13 @@ func (c *Checker) download(ctx context.Context, url string) ([]byte, error) {
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
-	resp, err := c.httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
 	}
 	return io.ReadAll(resp.Body)
 }
