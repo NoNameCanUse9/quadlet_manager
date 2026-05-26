@@ -127,7 +127,7 @@ internal/
 | `systemd.go` | **SystemdProvider 接口定义**。声明 Connect/Close/IsRootless、DaemonReload/StartUnit/StopUnit/RestartUnit/EnableUnit/DisableUnit、ListUnits/GetUnitStatus、SubscribeUnitChanges。 | `SystemdProvider` 接口 | service/unit_service.go |
 | `systemd_dbus.go` | **D-Bus 实现**。rootless 用 `dbus.NewUserConnectionContext`，rootful 用 `dbus.NewSystemConnectionContext`。通过 `org.freedesktop.systemd1.Manager` 调用 systemd。 | `DBusSystemdProvider`, `NewDBusSystemdProvider()` | main.go |
 | `podman.go` | **PodmanProvider 接口定义**。声明容器/镜像/卷/网络的 CRUD 操作，以及 ExecCreate/ExecAttach（Web 终端）。 | `PodmanProvider` 接口 | service/container_service.go 等 |
-| `podman_socket.go` | **Podman Socket 实现**。通过 HTTP over Unix Socket 调用 Podman libpod API (v5.0.0)。不依赖 CGO。 | `SocketPodmanProvider`, `NewSocketPodmanProvider()` | main.go |
+| `podman_socket.go` | **Podman Socket 实现**。通过 HTTP over Unix Socket 调用 Podman libpod API。自动检测 API 版本（`v` 前缀规范化）。`ListImages` 显式映射 Podman 字段（`RepoTags` → `Tags`），确保空值为 `[]` 而非 `null`。不依赖 CGO。 | `SocketPodmanProvider`, `NewSocketPodmanProvider()` | main.go |
 | `quadletfs.go` | **QuadletFS 接口定义**。声明 ScanDir/ReadFile/WriteFile/DeleteFile/ValidateFilename。 | `QuadletFS` 接口 | service/file_service.go, service/unit_service.go |
 | `quadletfs_impl.go` | **文件系统实现**。ScanDir 扫描目录并过滤合法 Quadlet 文件。ValidateFilename 防止路径遍历（白名单扩展名 + filepath.Clean）。WriteFile 自动创建目录。 | `QuadletFSImpl`, `NewQuadletFSImpl()` | main.go, service 内部 |
 | `mock_systemd.go` | **SystemdProvider Mock**。内存中模拟 Units map，可控返回错误。用于测试。 | `MockSystemd`, `NewMockSystemd()` | 测试文件 |
@@ -227,7 +227,7 @@ internal/
 
 | 文件 | 作用 | 被谁使用 |
 |------|------|----------|
-| `hub.go` | **WebSocket 消息中心**。管理客户端连接注册/注销，消息广播。`HandleWebSocket` 处理 WS 升级（含 JWT 认证）。`StartStatsBroadcaster` 定时推送容器统计。`StartAlertBroadcaster` 检测单元失败并推送告警（含启动预热）。 | main.go, handler/stats_handler.go |
+| `hub.go` | **WebSocket 消息中心**。管理客户端连接注册/注销，消息广播。`HandleWebSocket` 处理 WS 升级（含 JWT 认证）。`CheckOrigin` 动态匹配请求 Host，支持非 localhost 访问。`StartStatsBroadcaster` 定时推送容器统计。`StartAlertBroadcaster` 检测单元失败并推送告警（含启动预热）。 | main.go, handler/stats_handler.go |
 
 ### 2.3 前端: web/
 
