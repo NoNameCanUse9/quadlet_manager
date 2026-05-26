@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.2](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.1...v1.2.2) (2026-05-26)
+
+
+### Bug Fixes
+
+* add error logging for self-update failures ([2c699ad](https://github.com/NoNameCanUse9/quadlet_manager/commit/2c699ad1db90be9059c728be27392485213b5dd1))
+* SelfUpdate timeout too short and improve error messages ([72d4414](https://github.com/NoNameCanUse9/quadlet_manager/commit/72d4414873db1c0f71a312e76f583bb0db003423))
+
 ### [1.2.1](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.0...v1.2.1) (2026-05-26)
 
 
