@@ -295,9 +295,29 @@ func (p *SocketPodmanProvider) ExecResize(_ context.Context, execID string, heig
 }
 
 func (p *SocketPodmanProvider) ListImages(_ context.Context) ([]model.ImageInfo, error) {
-	var images []model.ImageInfo
-	err := p.doJSON("GET", "/images/json", nil, &images)
-	return images, err
+	// Podman API returns different field names than our model
+	var raw []struct {
+		ID       string   `json:"Id"`
+		RepoTags []string `json:"RepoTags"`
+		Size     int64    `json:"Size"`
+	}
+	err := p.doJSON("GET", "/images/json", nil, &raw)
+	if err != nil {
+		return nil, err
+	}
+	images := make([]model.ImageInfo, 0, len(raw))
+	for _, r := range raw {
+		tags := r.RepoTags
+		if tags == nil {
+			tags = []string{}
+		}
+		images = append(images, model.ImageInfo{
+			ID:   r.ID,
+			Tags: tags,
+			Size: r.Size,
+		})
+	}
+	return images, nil
 }
 
 func (p *SocketPodmanProvider) PullImage(_ context.Context, name string) (io.ReadCloser, error) {

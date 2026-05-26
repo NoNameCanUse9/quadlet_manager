@@ -99,7 +99,7 @@ export function ImagesPage() {
                                     {img.id.slice(0, 12)}
                                 </td>
                                 <td className="px-4 py-3 text-text-primary font-semibold font-mono">
-                                    {img.tags.join(", ") || "-"}
+                                    {img.tags?.join(", ") || "-"}
                                 </td>
                                 <td className="px-4 py-3 text-right text-text-secondary font-mono font-medium">
                                     {formatBytes(img.size)}
