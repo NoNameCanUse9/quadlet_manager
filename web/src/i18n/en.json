@@ -109,28 +109,50 @@
     "pull": "Pull",
     "pullTitle": "Pull Image",
     "pullPlaceholder": "image:tag (e.g. nginx:latest)",
-    "removeConfirm": "Remove this image?"
+    "removeConfirm": "Remove this image?",
+    "update": "Update",
+    "updated": "Image update started"
   },
   "volumes": {
     "title": "Volumes",
     "name": "Name",
     "mountPoint": "Mount Point",
+    "driver": "Driver",
     "noData": "No volumes found",
     "createTitle": "Create Volume",
     "namePlaceholder": "Volume name",
     "devicePlaceholder": "Host path (optional, e.g. /data/nginx)",
-    "removeConfirm": "Remove volume \"{{name}}\"?"
+    "removeConfirm": "Remove volume \"{{name}}\"?",
+    "export": "Export",
+    "import": "Import",
+    "importTitle": "Import to Volume",
+    "importDesc": "Upload a tar archive to import into volume \"{{name}}\".",
+    "prune": "Prune",
+    "pruneConfirm": "Remove all unused volumes?",
+    "pruneResult": "Pruned {{count}} volume(s)",
+    "exportSuccess": "Volume exported",
+    "importSuccess": "Data imported to volume"
   },
   "networks": {
     "title": "Networks",
     "name": "Name",
     "id": "ID",
+    "driver": "Driver",
     "noData": "No networks found",
     "createTitle": "Create Network",
     "namePlaceholder": "Network name *",
     "driverPlaceholder": "Driver (default: bridge)",
     "subnetPlaceholder": "Subnet (e.g. 10.89.0.0/24)",
-    "removeConfirm": "Remove network \"{{name}}\"?"
+    "removeConfirm": "Remove network \"{{name}}\"?",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connectTitle": "Connect Container",
+    "selectContainer": "Select container",
+    "connected": "Container connected",
+    "disconnected": "Container disconnected",
+    "prune": "Prune",
+    "pruneConfirm": "Remove all unused networks?",
+    "pruneResult": "Pruned {{count}} network(s)"
   },
   "files": {
     "title": "Quadlet",

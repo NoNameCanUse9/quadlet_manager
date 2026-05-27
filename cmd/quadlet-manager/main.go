@@ -262,12 +262,18 @@ func main() {
 		protected.POST("/volumes", volumeH.CreateVolume)
 		protected.DELETE("/volumes/:name", volumeH.RemoveVolume)
 		protected.GET("/volumes/:name/inspect", volumeH.InspectVolume)
+		protected.GET("/volumes/:name/export", volumeH.ExportVolume)
+		protected.POST("/volumes/:name/import", volumeH.ImportVolume)
+		protected.POST("/volumes/prune", volumeH.PruneVolumes)
 
 		// Networks
 		protected.GET("/networks", networkH.ListNetworks)
 		protected.POST("/networks", networkH.CreateNetwork)
 		protected.DELETE("/networks/:name", networkH.RemoveNetwork)
 		protected.GET("/networks/:name/inspect", networkH.InspectNetwork)
+		protected.POST("/networks/:name/connect", networkH.ConnectNetwork)
+		protected.POST("/networks/:name/disconnect", networkH.DisconnectNetwork)
+		protected.POST("/networks/prune", networkH.PruneNetworks)
 
 		// Backup
 		protected.GET("/backup/export", backupH.ExportBackup)

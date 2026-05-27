@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/choken/quadlet-manager/internal/service"
@@ -66,4 +67,37 @@ func (h *VolumeHandler) InspectVolume(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, info)
+}
+
+func (h *VolumeHandler) ExportVolume(c *gin.Context) {
+	reader, err := h.volumes.ExportVolume(c.Request.Context(), c.Param("name"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer reader.Close()
+	c.Header("Content-Type", "application/x-tar")
+	c.Header("Content-Disposition", "attachment; filename="+c.Param("name")+".tar")
+	c.Status(http.StatusOK)
+	if _, err := io.Copy(c.Writer, reader); err != nil {
+		// Connection may have been closed by client
+		return
+	}
+}
+
+func (h *VolumeHandler) ImportVolume(c *gin.Context) {
+	if err := h.volumes.ImportVolume(c.Request.Context(), c.Param("name"), c.Request.Body); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "imported"})
+}
+
+func (h *VolumeHandler) PruneVolumes(c *gin.Context) {
+	count, err := h.volumes.PruneVolumes(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"pruned": count})
 }

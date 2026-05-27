@@ -25,3 +25,29 @@ export function useRemoveNetwork() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['networks'] }),
   })
 }
+
+export function useConnectNetwork() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ name, containerId }: { name: string; containerId: string }) =>
+      api.connectNetwork(name, containerId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['networks'] }),
+  })
+}
+
+export function useDisconnectNetwork() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ name, containerId, force }: { name: string; containerId: string; force?: boolean }) =>
+      api.disconnectNetwork(name, containerId, force),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['networks'] }),
+  })
+}
+
+export function usePruneNetworks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.pruneNetworks(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['networks'] }),
+  })
+}

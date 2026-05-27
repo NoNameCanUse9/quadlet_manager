@@ -90,6 +90,27 @@ export const api = {
   removeVolume: (name: string, force = false) =>
     request(`/volumes/${name}?force=${force}`, { method: 'DELETE' }),
   inspectVolume: (name: string) => request<VolumeInspect>(`/volumes/${name}/inspect`),
+  exportVolume: (name: string) => {
+    const token = useAuth.getState().token
+    return fetch(`${BASE}/volumes/${name}/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).then(res => {
+      if (!res.ok) throw new Error(`Export failed: ${res.status}`)
+      return res.blob()
+    })
+  },
+  importVolume: (name: string, file: File) => {
+    const token = useAuth.getState().token
+    return fetch(`${BASE}/volumes/${name}/import`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: file,
+    }).then(res => {
+      if (!res.ok) throw new Error(`Import failed: ${res.status}`)
+      return res.json()
+    })
+  },
+  pruneVolumes: () => request<{ pruned: number }>('/volumes/prune', { method: 'POST' }),
 
   // Networks
   listNetworks: () => request<NetworkInfo[]>('/networks'),
@@ -98,6 +119,11 @@ export const api = {
   removeNetwork: (name: string) =>
     request(`/networks/${name}`, { method: 'DELETE' }),
   inspectNetwork: (name: string) => request<NetworkInspect>(`/networks/${name}/inspect`),
+  connectNetwork: (name: string, containerId: string) =>
+    request(`/networks/${name}/connect`, { method: 'POST', body: JSON.stringify({ containerId }) }),
+  disconnectNetwork: (name: string, containerId: string, force = false) =>
+    request(`/networks/${name}/disconnect`, { method: 'POST', body: JSON.stringify({ containerId, force }) }),
+  pruneNetworks: () => request<{ pruned: number }>('/networks/prune', { method: 'POST' }),
 
   // Compose
   listComposeProjects: () => request<ComposeProject[]>('/compose'),

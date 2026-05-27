@@ -433,4 +433,90 @@ func (p *SocketPodmanProvider) InspectNetwork(_ context.Context, name string) (m
 	return result, err
 }
 
+func (p *SocketPodmanProvider) ConnectNetwork(_ context.Context, name, containerID string) error {
+	body := map[string]string{"Container": containerID}
+	resp, err := p.do("POST", fmt.Sprintf("/networks/%s/connect", name), body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("connect network %s: %s", name, string(msg))
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) DisconnectNetwork(_ context.Context, name, containerID string, force bool) error {
+	body := map[string]any{"Container": containerID, "Force": force}
+	resp, err := p.do("POST", fmt.Sprintf("/networks/%s/disconnect", name), body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("disconnect network %s: %s", name, string(msg))
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) PruneNetworks(_ context.Context) (int, error) {
+	var result struct {
+		Networks []struct {
+			Name string `json:"Name"`
+		} `json:"Networks"`
+	}
+	err := p.doJSON("POST", "/networks/prune", nil, &result)
+	if err != nil {
+		return 0, err
+	}
+	return len(result.Networks), nil
+}
+
+func (p *SocketPodmanProvider) ExportVolume(_ context.Context, name string) (io.ReadCloser, error) {
+	resp, err := p.do("GET", fmt.Sprintf("/volumes/%s/export", name), nil)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("export volume %s: %s", name, string(msg))
+	}
+	return resp.Body, nil
+}
+
+func (p *SocketPodmanProvider) ImportVolume(_ context.Context, name string, reader io.Reader) error {
+	url := fmt.Sprintf("http://localhost/%s/libpod/volumes/%s/import", p.apiVersion, name)
+	req, err := http.NewRequest("POST", url, reader)
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-tar")
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		msg, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("import volume %s: %s", name, string(msg))
+	}
+	return nil
+}
+
+func (p *SocketPodmanProvider) PruneVolumes(_ context.Context) (int, error) {
+	var result struct {
+		Volumes []struct {
+			Name string `json:"Name"`
+		} `json:"Volumes"`
+	}
+	err := p.doJSON("POST", "/volumes/prune", nil, &result)
+	if err != nil {
+		return 0, err
+	}
+	return len(result.Volumes), nil
+}
+
 var _ PodmanProvider = (*SocketPodmanProvider)(nil)

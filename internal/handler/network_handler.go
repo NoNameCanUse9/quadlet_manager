@@ -57,3 +57,43 @@ func (h *NetworkHandler) InspectNetwork(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, info)
 }
+
+func (h *NetworkHandler) ConnectNetwork(c *gin.Context) {
+	var req struct {
+		ContainerID string `json:"containerId" binding:"required"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.networks.ConnectNetwork(c.Request.Context(), c.Param("name"), req.ContainerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "connected"})
+}
+
+func (h *NetworkHandler) DisconnectNetwork(c *gin.Context) {
+	var req struct {
+		ContainerID string `json:"containerId" binding:"required"`
+		Force       bool   `json:"force"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.networks.DisconnectNetwork(c.Request.Context(), c.Param("name"), req.ContainerID, req.Force); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "disconnected"})
+}
+
+func (h *NetworkHandler) PruneNetworks(c *gin.Context) {
+	count, err := h.networks.PruneNetworks(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"pruned": count})
+}

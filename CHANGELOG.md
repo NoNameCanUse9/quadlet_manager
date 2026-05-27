@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [1.3.0](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.2...v1.3.0) (2026-05-27)
 
+
+### Features
+
+* add network connect/disconnect/prune, volume export/import/prune, image update ([c8e3cbe](https://github.com/NoNameCanUse9/quadlet_manager/commit/c8e3cbe))
+
 ### [1.2.2](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.1...v1.2.2) (2026-05-26)
 
 

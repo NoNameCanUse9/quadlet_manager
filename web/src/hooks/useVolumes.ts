@@ -25,3 +25,11 @@ export function useRemoveVolume() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['volumes'] }),
   })
 }
+
+export function usePruneVolumes() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.pruneVolumes(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['volumes'] }),
+  })
+}

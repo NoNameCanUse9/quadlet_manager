@@ -109,28 +109,50 @@
     "pull": "拉取",
     "pullTitle": "拉取镜像",
     "pullPlaceholder": "镜像:标签 (例如 nginx:latest)",
-    "removeConfirm": "确认删除此镜像吗？"
+    "removeConfirm": "确认删除此镜像吗？",
+    "update": "更新",
+    "updated": "镜像更新已开始"
   },
   "volumes": {
     "title": "存储卷",
     "name": "名称",
     "mountPoint": "挂载点",
+    "driver": "驱动",
     "noData": "未找到存储卷",
     "createTitle": "创建存储卷",
     "namePlaceholder": "存储卷名称",
     "devicePlaceholder": "宿主机路径（可选，如 /data/nginx）",
-    "removeConfirm": "确认删除存储卷 \"{{name}}\" 吗？"
+    "removeConfirm": "确认删除存储卷 \"{{name}}\" 吗？",
+    "export": "导出",
+    "import": "导入",
+    "importTitle": "导入到存储卷",
+    "importDesc": "上传 tar 归档文件导入到存储卷 \"{{name}}\"。",
+    "prune": "清理",
+    "pruneConfirm": "确认清理所有未使用的存储卷？",
+    "pruneResult": "已清理 {{count}} 个存储卷",
+    "exportSuccess": "存储卷导出成功",
+    "importSuccess": "数据已导入存储卷"
   },
   "networks": {
     "title": "网络",
     "name": "名称",
     "id": "ID",
+    "driver": "驱动",
     "noData": "未找到网络",
     "createTitle": "创建网络",
     "namePlaceholder": "网络名称 *",
     "driverPlaceholder": "驱动 (默认: bridge)",
     "subnetPlaceholder": "子网 (例如 10.89.0.0/24)",
-    "removeConfirm": "确认删除网络 \"{{name}}\" 吗？"
+    "removeConfirm": "确认删除网络 \"{{name}}\" 吗？",
+    "connect": "连接",
+    "disconnect": "断开",
+    "connectTitle": "连接容器",
+    "selectContainer": "选择容器",
+    "connected": "容器已连接",
+    "disconnected": "容器已断开",
+    "prune": "清理",
+    "pruneConfirm": "确认清理所有未使用的网络？",
+    "pruneResult": "已清理 {{count}} 个网络"
   },
   "files": {
     "title": "Quadlet",

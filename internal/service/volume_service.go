@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 
 	"github.com/choken/quadlet-manager/internal/model"
 	"github.com/choken/quadlet-manager/internal/provider"
@@ -29,4 +30,16 @@ func (s *VolumeService) RemoveVolume(ctx context.Context, name string, force boo
 
 func (s *VolumeService) InspectVolume(ctx context.Context, name string) (map[string]any, error) {
 	return s.podman.InspectVolume(ctx, name)
+}
+
+func (s *VolumeService) ExportVolume(ctx context.Context, name string) (io.ReadCloser, error) {
+	return s.podman.ExportVolume(ctx, name)
+}
+
+func (s *VolumeService) ImportVolume(ctx context.Context, name string, reader io.Reader) error {
+	return s.podman.ImportVolume(ctx, name, reader)
+}
+
+func (s *VolumeService) PruneVolumes(ctx context.Context) (int, error) {
+	return s.podman.PruneVolumes(ctx)
 }

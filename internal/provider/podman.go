@@ -43,10 +43,16 @@ type PodmanProvider interface {
 	CreateVolume(ctx context.Context, name string, labels map[string]string, opts map[string]string) (*model.VolumeInfo, error)
 	RemoveVolume(ctx context.Context, name string, force bool) error
 	InspectVolume(ctx context.Context, name string) (map[string]any, error)
+	ExportVolume(ctx context.Context, name string) (io.ReadCloser, error)
+	ImportVolume(ctx context.Context, name string, reader io.Reader) error
+	PruneVolumes(ctx context.Context) (int, error)
 
 	// Networks
 	ListNetworks(ctx context.Context) ([]model.NetworkInfo, error)
 	CreateNetwork(ctx context.Context, name, driver string, subnet string) error
 	RemoveNetwork(ctx context.Context, name string) error
 	InspectNetwork(ctx context.Context, name string) (map[string]any, error)
+	ConnectNetwork(ctx context.Context, name, containerID string) error
+	DisconnectNetwork(ctx context.Context, name, containerID string, force bool) error
+	PruneNetworks(ctx context.Context) (int, error)
 }

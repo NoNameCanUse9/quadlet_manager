@@ -30,3 +30,15 @@ func (s *NetworkService) RemoveNetwork(ctx context.Context, name string) error {
 func (s *NetworkService) InspectNetwork(ctx context.Context, name string) (map[string]any, error) {
 	return s.podman.InspectNetwork(ctx, name)
 }
+
+func (s *NetworkService) ConnectNetwork(ctx context.Context, name, containerID string) error {
+	return s.podman.ConnectNetwork(ctx, name, containerID)
+}
+
+func (s *NetworkService) DisconnectNetwork(ctx context.Context, name, containerID string, force bool) error {
+	return s.podman.DisconnectNetwork(ctx, name, containerID, force)
+}
+
+func (s *NetworkService) PruneNetworks(ctx context.Context) (int, error) {
+	return s.podman.PruneNetworks(ctx)
+}

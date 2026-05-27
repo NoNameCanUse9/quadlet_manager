@@ -223,3 +223,36 @@ func (m *MockPodman) RemoveNetwork(_ context.Context, name string) error {
 func (m *MockPodman) InspectNetwork(_ context.Context, _ string) (map[string]any, error) {
 	return map[string]any{"mock": true}, nil
 }
+
+func (m *MockPodman) ConnectNetwork(_ context.Context, _, _ string) error {
+	return m.Err
+}
+
+func (m *MockPodman) DisconnectNetwork(_ context.Context, _, _ string, _ bool) error {
+	return m.Err
+}
+
+func (m *MockPodman) PruneNetworks(_ context.Context) (int, error) {
+	if m.Err != nil {
+		return 0, m.Err
+	}
+	return 0, nil
+}
+
+func (m *MockPodman) ExportVolume(_ context.Context, _ string) (io.ReadCloser, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return io.NopCloser(strings.NewReader("mock tar data")), nil
+}
+
+func (m *MockPodman) ImportVolume(_ context.Context, _ string, _ io.Reader) error {
+	return m.Err
+}
+
+func (m *MockPodman) PruneVolumes(_ context.Context) (int, error) {
+	if m.Err != nil {
+		return 0, m.Err
+	}
+	return 0, nil
+}
