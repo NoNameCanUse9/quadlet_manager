@@ -25,7 +25,7 @@
 - **容器管理**: 通过 Podman Socket API 管理容器生命周期、查看日志、Web 终端
 - **Docker Compose 兼容**: 导入 docker-compose.yml，通过 podman compose 管理，支持转换为 Quadlet 文件
 - **开机自启管理**: 容器页面支持 Quadlet 管理容器的开机自启开关
-- **资源管理**: 镜像拉取/删除、存储卷/网络 CRUD
+- **资源管理**: 镜像拉取/删除/更新、存储卷 CRUD + 导入导出 + 清理、网络 CRUD + 容器连接/断开 + 清理
 - **用户认证**: JWT 认证，admin/user 角色，用户级资源隔离
 - **实时推送**: WebSocket 推送容器统计和单元状态变更
 - **OTA 自更新**: 定期检查 GitHub Release，前端通知新版本，支持一键下载替换二进制并自动重启（需 systemd）
@@ -149,8 +149,8 @@ internal/
 | `container_service.go` | **容器操作封装**。直接代理到 PodmanProvider。 | `ListContainers()`, `GetContainerLogs()`, `PauseContainer()`, `InspectContainer()` | handler/container_handler.go |
 | `orchestrator.go` | **容器编排器**。协调 systemd 和 podman：判断容器是否由 Quadlet 管理（`IsManaged`），如果是则通过 systemd 控制，否则直接操作 podman。支持开机自启查询/设置（`GetAutostart`/`SetAutostart`）。 | `Start()`, `Stop()`, `Restart()`, `Remove()`, `IsManaged()`, `GetAutostart()`, `SetAutostart()` | handler/container_handler.go |
 | `image_service.go` | **镜像操作封装**。代理到 PodmanProvider。`PullImage` 支持镜像站代理：查询用户设置的 `mirrorRegistry`，若镜像名无 registry 前缀则自动拼接。 | `ListImages()`, `PullImage(ctx, userID, name)`, `RemoveImage()`, `InspectImage()` | handler/image_handler.go |
-| `volume_service.go` | **存储卷操作封装**。`CreateVolume` 支持 `opts` 参数，指定宿主机路径时创建 bind mount 卷。 | `ListVolumes()`, `CreateVolume(ctx, name, labels, opts)`, `RemoveVolume()`, `InspectVolume()` | handler/volume_handler.go |
-| `network_service.go` | **网络操作封装**。 | `ListNetworks()`, `CreateNetwork()`, `RemoveNetwork()`, `InspectNetwork()` | handler/network_handler.go |
+| `volume_service.go` | **存储卷操作封装**。`CreateVolume` 支持 `opts` 参数，指定宿主机路径时创建 bind mount 卷。`ExportVolume` 导出为 tar，`ImportVolume` 从 tar 导入，`PruneVolumes` 清理未使用卷。 | `ListVolumes()`, `CreateVolume()`, `RemoveVolume()`, `InspectVolume()`, `ExportVolume()`, `ImportVolume()`, `PruneVolumes()` | handler/volume_handler.go |
+| `network_service.go` | **网络操作封装**。`ConnectNetwork` 将容器连接到网络，`DisconnectNetwork` 断开，`PruneNetworks` 清理未使用网络。 | `ListNetworks()`, `CreateNetwork()`, `RemoveNetwork()`, `InspectNetwork()`, `ConnectNetwork()`, `DisconnectNetwork()`, `PruneNetworks()` | handler/network_handler.go |
 | `backup_service.go` | **备份服务**。`Export` 将 Quadlet 文件打包为 tar.gz。`Import` 解压并写入。 | `Export()`, `Import()` | handler/backup_handler.go |
 | `service_test.go` | 单元启动/列表、文件 CRUD/验证、编排器测试。 | - | - |
 | `orchestrator_test.go` | 编排器孤立容器检测测试。 | - | - |
@@ -278,8 +278,8 @@ web/
 | `useContainers.ts` | 容器查询 hooks。包含 `useSetAutostart()` 开机自启 mutation。 | ContainersPage |
 | `useCompose.ts` | Compose 项目 hooks。`useComposeProjects()` 获取列表，`useComposeUp/Down()` 启停，`useConvertCompose()` 转换。 | ContainersPage |
 | `useImages.ts` | 镜像查询 hooks。 | ImagesPage |
-| `useVolumes.ts` | 存储卷查询 hooks。 | VolumesPage |
-| `useNetworks.ts` | 网络查询 hooks。 | NetworksPage |
+| `useVolumes.ts` | 存储卷查询 hooks。含 `usePruneVolumes` 清理 mutation。 | VolumesPage |
+| `useNetworks.ts` | 网络查询 hooks。含 `useConnectNetwork`、`useDisconnectNetwork`、`usePruneNetworks` mutations。 | NetworksPage |
 | `useWebSocket.ts` | WebSocket 连接 hook。自动重连，解析消息类型。 | DashboardPage |
 
 #### pages/ — 页面组件
@@ -290,9 +290,9 @@ web/
 | `LoginPage.tsx` | **登录页面**。用户名/密码表单，登录成功后跳转主页。 | /login | useAuth |
 | `DashboardPage.tsx` | **仪表盘**。显示容器统计卡片、单元状态概览。使用 WebSocket 接收实时更新。 | / (index) | useContainers, useWebSocket |
 | `ContainersPage.tsx` | **容器管理页面**。统一列表展示所有容器（Quadlet/Compose/Podman），用类型 badge 区分来源。支持生命周期操作、开机自启开关、创建容器（Portainer 风格表单）、导入 Compose、转换 Compose 为 Quadlet。 | /containers | useContainers, useCompose hooks |
-| `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除。 | /images | useImages hooks |
-| `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除。 | /volumes | useVolumes hooks |
-| `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除。 | /networks | useNetworks hooks |
+| `ImagesPage.tsx` | **镜像管理页面**。列出镜像，支持拉取/删除/更新（pull 最新版）。 | /images | useImages hooks |
+| `VolumesPage.tsx` | **存储卷管理页面**。列出存储卷，支持创建/删除/导出（tar）/导入（tar）/清理未使用卷。 | /volumes | useVolumes hooks |
+| `NetworksPage.tsx` | **网络管理页面**。列出网络，支持创建/删除/连接容器/断开容器/清理未使用网络。 | /networks | useNetworks hooks, useContainers |
 | `FilesPage.tsx` | **Quadlet 编排控制中心**（主路由 `/files`）。将新建、编辑器（CodeMirror）、向导表单（ConfigWizard）与 Systemd 单元管理（运行状态监控、一键启动/停止/重启、开机自启开关、一键 Deploy）深度合二为一的大一统交互面板。 | /files | useApp, useUnits |
 | `TerminalPage.tsx` | **Web 终端**。xterm.js 终端模拟器，通过 WebSocket 连接到 Podman exec 会话。 | /containers/:id/exec/:exec_id | api client |
 | `SettingsPage.tsx` | **用户设置页面**。可编辑语言、quadlet 目录、podman socket。修改后调用 API 保存。底部「关于」区块显示版本信息、更新检查和一键自更新按钮。 | /settings | api client |
@@ -401,7 +401,9 @@ type PodmanProvider interface {
     GetContainerStats(ctx context.Context, id string) (*model.ContainerStats, error)
     GetAllStats(ctx context.Context) ([]model.ContainerStats, error)
     GetContainerLogs(ctx context.Context, id string, tail int) ([]string, error)
-    // ... 更多方法
+    // ... 容器生命周期、exec、镜像方法
+    // 卷: ListVolumes, CreateVolume, RemoveVolume, InspectVolume, ExportVolume, ImportVolume, PruneVolumes
+    // 网络: ListNetworks, CreateNetwork, RemoveNetwork, InspectNetwork, ConnectNetwork, DisconnectNetwork, PruneNetworks
 }
 
 // QuadletFS - 文件系统操作
@@ -617,9 +619,17 @@ CREATE TABLE config (
 | GET | `/api/v1/volumes` | 列出存储卷 |
 | POST | `/api/v1/volumes` | 创建存储卷 |
 | DELETE | `/api/v1/volumes/:name` | 删除存储卷 |
+| GET | `/api/v1/volumes/:name/inspect` | 存储卷详情 |
+| GET | `/api/v1/volumes/:name/export` | 导出存储卷为 tar |
+| POST | `/api/v1/volumes/:name/import` | 导入 tar 到存储卷 |
+| POST | `/api/v1/volumes/prune` | 清理未使用的存储卷 |
 | GET | `/api/v1/networks` | 列出网络 |
 | POST | `/api/v1/networks` | 创建网络 |
 | DELETE | `/api/v1/networks/:name` | 删除网络 |
+| GET | `/api/v1/networks/:name/inspect` | 网络详情 |
+| POST | `/api/v1/networks/:name/connect` | 将容器连接到网络 |
+| POST | `/api/v1/networks/:name/disconnect` | 将容器从网络断开 |
+| POST | `/api/v1/networks/prune` | 清理未使用的网络 |
 
 ### 5.9 其他
 
