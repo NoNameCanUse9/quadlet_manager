@@ -1,6 +1,21 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCw, Download, Trash2, ArrowDownToLine } from "lucide-react";
+
+function TooltipButton({ onClick, className, title, disabled, children }: {
+    onClick?: () => void; className?: string; title: string; disabled?: boolean; children: React.ReactNode
+}) {
+    return (
+        <div className="relative group">
+            <button onClick={onClick} className={className} disabled={disabled}>
+                {children}
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-surface border border-border rounded text-xs text-text-primary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                {title}
+            </div>
+        </div>
+    );
+}
 import { useImages, usePullImage, useRemoveImage } from "@/hooks/useImages";
 import { toast } from "sonner";
 
@@ -113,25 +128,25 @@ export function ImagesPage() {
                                 <td className="px-4 py-3 text-right text-text-secondary font-mono font-medium">
                                     {formatBytes(img.size)}
                                 </td>
-                                <td className="px-4 py-3 text-right whitespace-nowrap">
-                                    <div className="flex items-center justify-end gap-0.5">
+                                <td className="px-4 py-3 text-right">
+                                    <div className="flex items-center justify-end gap-1">
                                         {img.tags && img.tags.length > 0 && img.tags[0] !== "" && (
-                                            <button
+                                            <TooltipButton
                                                 onClick={() => handleUpdate(img.tags![0])}
                                                 disabled={pullMut.isPending}
                                                 className="p-1.5 text-text-secondary hover:text-blue-400 transition-colors disabled:opacity-50"
                                                 title={t("images.update")}
                                             >
                                                 <ArrowDownToLine size={14} />
-                                            </button>
+                                            </TooltipButton>
                                         )}
-                                        <button
+                                        <TooltipButton
                                             onClick={() => setDeleteTarget(img.id)}
                                             className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
                                             title={t("common.remove")}
                                         >
                                             <Trash2 size={14} />
-                                        </button>
+                                        </TooltipButton>
                                     </div>
                                 </td>
                             </tr>
