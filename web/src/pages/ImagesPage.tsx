@@ -113,24 +113,26 @@ export function ImagesPage() {
                                 <td className="px-4 py-3 text-right text-text-secondary font-mono font-medium">
                                     {formatBytes(img.size)}
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    {img.tags && img.tags.length > 0 && img.tags[0] !== "" && (
+                                <td className="px-4 py-3 text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-0.5">
+                                        {img.tags && img.tags.length > 0 && img.tags[0] !== "" && (
+                                            <button
+                                                onClick={() => handleUpdate(img.tags![0])}
+                                                disabled={pullMut.isPending}
+                                                className="p-1.5 text-text-secondary hover:text-blue-400 transition-colors disabled:opacity-50"
+                                                title={t("images.update")}
+                                            >
+                                                <ArrowDownToLine size={14} />
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={() => handleUpdate(img.tags![0])}
-                                            disabled={pullMut.isPending}
-                                            className="p-1.5 text-text-secondary hover:text-blue-400 transition-colors disabled:opacity-50"
-                                            title={t("images.update")}
+                                            onClick={() => setDeleteTarget(img.id)}
+                                            className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
+                                            title={t("common.remove")}
                                         >
-                                            <ArrowDownToLine size={14} />
+                                            <Trash2 size={14} />
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => setDeleteTarget(img.id)}
-                                        className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
-                                        title={t("common.remove") || "Remove"}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

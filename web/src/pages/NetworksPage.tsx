@@ -162,33 +162,35 @@ export function NetworksPage() {
                                 <td className="px-4 py-3 text-text-muted font-mono text-xs">
                                     {n.id.slice(0, 12)}
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    <button
-                                        onClick={() => setConnectTarget(n.name)}
-                                        className="p-1.5 text-text-secondary hover:text-blue-400 transition-colors"
-                                        title={t("networks.connect")}
-                                    >
-                                        <Link size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            const containerId = prompt(t("networks.selectContainer") + " (ID):");
-                                            if (containerId) {
-                                                setDisconnectTarget({ name: n.name, containerId });
-                                            }
-                                        }}
-                                        className="p-1.5 text-text-secondary hover:text-amber-400 transition-colors"
-                                        title={t("networks.disconnect")}
-                                    >
-                                        <Unlink size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteTarget(n.name)}
-                                        className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
-                                        title={t("common.remove") || "Remove"}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                <td className="px-4 py-3 text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-0.5">
+                                        <button
+                                            onClick={() => setConnectTarget(n.name)}
+                                            className="p-1.5 text-text-secondary hover:text-blue-400 transition-colors"
+                                            title={t("networks.connect")}
+                                        >
+                                            <Link size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const containerId = prompt(t("networks.selectContainer") + " (ID):");
+                                                if (containerId) {
+                                                    setDisconnectTarget({ name: n.name, containerId });
+                                                }
+                                            }}
+                                            className="p-1.5 text-text-secondary hover:text-amber-400 transition-colors"
+                                            title={t("networks.disconnect")}
+                                        >
+                                            <Unlink size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => setDeleteTarget(n.name)}
+                                            className="p-1.5 text-text-secondary hover:text-red-400 transition-colors"
+                                            title={t("common.remove")}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
