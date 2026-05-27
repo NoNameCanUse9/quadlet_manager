@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.1](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.3.0...v1.3.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* add tooltips and fix action button layout on volumes/networks/images pages ([a3564fe](https://github.com/NoNameCanUse9/quadlet_manager/commit/a3564fe3424882e27da39b2f26ae15e84babc2f5))
+* correct changelog extraction regex in release workflow ([79b52dd](https://github.com/NoNameCanUse9/quadlet_manager/commit/79b52dd500a49dc3e05c05b76adf706f61bd4ea2))
+
+
+### Documentation
+
+* update CLAUDE.md with network/volume/image new features ([acb4e2a](https://github.com/NoNameCanUse9/quadlet_manager/commit/acb4e2a490969e141a5610b2f53ae6944a3f3307))
+
 ## [1.3.0](https://github.com/NoNameCanUse9/quadlet_manager/compare/v1.2.2...v1.3.0) (2026-05-27)
 
 
